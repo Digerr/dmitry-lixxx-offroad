@@ -1,6 +1,6 @@
 {
   "name": "dmitry-lixxx-offroad",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Dmitry_Lixxx на бездорожье — Hill Climb Racing clone on Phaser 3 + Planck.js",
   "private": true,
   "scripts": {
