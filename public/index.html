@@ -191,18 +191,18 @@
   }
   .pedal {
     pointer-events: auto;
-    width: clamp(110px, 26vw, 160px);
-    height: clamp(110px, 26vw, 160px);
+    width: clamp(78px, 18vw, 108px);
+    height: clamp(78px, 18vw, 108px);
     border-radius: 50%;
     border: 3px solid rgba(255,255,255,0.85);
-    font-size: clamp(0.8rem, 2.4vw, 1.05rem);
+    font-size: clamp(0.7rem, 2vw, 0.92rem);
     font-weight: 900;
     font-family: inherit;
     color: #fff;
     text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 2px;
+    gap: 1px;
     transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
@@ -212,9 +212,9 @@
     user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
   }
   .pedal .icon {
-    font-size: clamp(1.8rem, 5vw, 2.4rem);
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
     line-height: 1;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
   }
   .pedal::before {
     content: '';
@@ -246,7 +246,7 @@
   }
   /* Tip hint above pedals (first play) */
   #controls-tip {
-    position: absolute; bottom: calc(180px + env(safe-area-inset-bottom));
+    position: absolute; bottom: calc(140px + env(safe-area-inset-bottom));
     left: 50%; transform: translateX(-50%);
     color: rgba(255,255,255,0.7); font-size: 0.85rem; font-weight: 600;
     background: rgba(0,0,0,0.45); padding: 6px 14px; border-radius: 12px;
@@ -1343,35 +1343,6 @@ class OffroadScene extends Phaser.Scene {
       S.wheelJointFront.enableMotor(false);
     }
 
-    // ===== Anti-flip assist (HCR-style weight shift) =====
-    // When the car nose tilts too far back (>35°) on a climb, apply counter-torque to prevent flipping
-    const carAngleNorm = ((ca % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-    // Nose-up angle: positive when leaning back (rotation CCW in y-down = nose up going right)
-    // In y-down: angle 0 = level, positive = CW = nose down. We want to detect nose-up = negative angle.
-    // Normalize to [-PI, PI]
-    let tiltAngle = carAngleNorm;
-    if (tiltAngle > Math.PI) tiltAngle -= Math.PI * 2;
-    // tiltAngle < 0 = nose up (leaning back), > 0 = nose down
-    const noseUpAngle = -tiltAngle; // positive when nose up
-    // Apply counter-torque when nose is up beyond 30° (=0.52 rad)
-    if (noseUpAngle > 0.52 && gasPressed) {
-      // Counter the flip — apply CCW torque (negative in y-down) only if angular velocity is also flipping
-      const angVel = S.carBody.getAngularVelocity();
-      if (angVel < 0) { // rotating CCW = nose going up further
-        // Apply restoring torque proportional to over-tilt and angular velocity
-        const correction = Math.min(800, (noseUpAngle - 0.52) * 1500 + Math.abs(angVel) * 200);
-        S.carBody.applyAngularImpulse(-correction * dt, true);
-      }
-    }
-    // Also help recover when nose is way down (going downhill, about to flip forward)
-    if (noseUpAngle < -0.70 && brakePressed) {
-      const angVel = S.carBody.getAngularVelocity();
-      if (angVel > 0) {
-        const correction = Math.min(800, (-noseUpAngle - 0.70) * 1500 + Math.abs(angVel) * 200);
-        S.carBody.applyAngularImpulse(correction * dt, true);
-      }
-    }
-
     // ===== Physics =====
     this.physicsWorld.step(CFG.PHYSICS_STEP, CFG.VEL_ITER, CFG.POS_ITER);
 
@@ -1386,6 +1357,30 @@ class OffroadScene extends Phaser.Scene {
     // ===== Sync sprites =====
     const cp = S.carBody.getPosition();
     const ca = S.carBody.getAngle();
+
+    // ===== Anti-flip assist (HCR-style weight shift) — must be after `ca` is defined =====
+    // Normalize angle to [-PI, PI]
+    let tiltAngle = ((ca % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    if (tiltAngle > Math.PI) tiltAngle -= Math.PI * 2;
+    // In y-down: angle < 0 = nose up (leaning back), > 0 = nose down
+    const noseUpAngle = -tiltAngle; // positive when nose up
+    // Apply counter-torque when nose is up beyond 30° (=0.52 rad)
+    if (noseUpAngle > 0.52 && gasPressed) {
+      const angVel = S.carBody.getAngularVelocity();
+      if (angVel < 0) { // rotating CCW = nose going up further
+        const correction = Math.min(800, (noseUpAngle - 0.52) * 1500 + Math.abs(angVel) * 200);
+        S.carBody.applyAngularImpulse(-correction * dt, true);
+      }
+    }
+    // Also help recover when nose is way down (going downhill, about to flip forward)
+    if (noseUpAngle < -0.70 && brakePressed) {
+      const angVel = S.carBody.getAngularVelocity();
+      if (angVel > 0) {
+        const correction = Math.min(800, (-noseUpAngle - 0.70) * 1500 + Math.abs(angVel) * 200);
+        S.carBody.applyAngularImpulse(correction * dt, true);
+      }
+    }
+
     S.carSprite.x = cp.x;
     S.carSprite.y = cp.y;
     S.carSprite.rotation = ca;
