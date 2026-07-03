@@ -419,15 +419,15 @@ const CFG = {
   VEL_ITER: 10,
   POS_ITER: 4,
   CAR_W: 110, CAR_H: 36,
-  CAR_DENSITY: 1.0,
+  CAR_DENSITY: 0.002,
   WHEEL_RADIUS: 26,
-  WHEEL_DENSITY: 1.2,
-  WHEEL_FRICTION: 1.2,
+  WHEEL_DENSITY: 0.003,
+  WHEEL_FRICTION: 2.5,
   SUSPENSION_FREQ: 4.5,
   SUSPENSION_DAMP: 0.65,
-  MOTOR_SPEED: -22,
-  REVERSE_SPEED: 14,
-  MOTOR_TORQUE: 75,
+  MOTOR_SPEED: 38,
+  REVERSE_SPEED: -22,
+  MOTOR_TORQUE: 250000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
   TERRAIN_INITIAL_FLAT: 8,
@@ -436,10 +436,11 @@ const CFG = {
   FUEL_DRAIN_GAS: 3.2,
   FUEL_PICKUP: 38,
   COIN_VALUE: 1,
-  CAM_LERP: 0.10,
-  CAM_OFFSET_X: -180,
-  CAM_OFFSET_Y: -80,
+  CAM_LERP: 0.12,
+  CAM_OFFSET_X: 220,
+  CAM_OFFSET_Y: -70,
   CAM_ZOOM: 0.85,
+  CAM_SNAP_FIRST: true,
 };
 
 const S = {
@@ -1073,6 +1074,7 @@ class OffroadScene extends Phaser.Scene {
     this._lastWheelAngle = 0;
     this._airborneTime = 0;
     this._wasAirborne = false;
+    this._camSnapped = false;
   }
 
   _setupInput() {
@@ -1169,8 +1171,15 @@ class OffroadScene extends Phaser.Scene {
       shakeY = (Math.random() - 0.5) * S.shake;
       S.shake = Math.max(0, S.shake - dt * 30);
     }
-    cam.scrollX = Phaser.Math.Linear(cam.scrollX, targetX - cam.width / 2 / CFG.CAM_ZOOM + shakeX, CFG.CAM_LERP);
-    cam.scrollY = Phaser.Math.Linear(cam.scrollY, targetY - cam.height / 2 / CFG.CAM_ZOOM + shakeY, CFG.CAM_LERP);
+    if (this._camSnapped !== true) {
+      // Snap on first frame so the car starts on the LEFT third of the screen
+      cam.scrollX = targetX - cam.width / 2 / CFG.CAM_ZOOM;
+      cam.scrollY = targetY - cam.height / 2 / CFG.CAM_ZOOM;
+      this._camSnapped = true;
+    } else {
+      cam.scrollX = Phaser.Math.Linear(cam.scrollX, targetX - cam.width / 2 / CFG.CAM_ZOOM + shakeX, CFG.CAM_LERP);
+      cam.scrollY = Phaser.Math.Linear(cam.scrollY, targetY - cam.height / 2 / CFG.CAM_ZOOM + shakeY, CFG.CAM_LERP);
+    }
 
     // ===== Fuel =====
     if (S.startedMoving) {
