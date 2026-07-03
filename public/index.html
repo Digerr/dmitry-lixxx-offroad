@@ -185,29 +185,36 @@
   #touch-controls {
     position: absolute; bottom: 0; left: 0; right: 0;
     display: flex; justify-content: space-between;
-    padding: 24px 32px calc(24px + env(safe-area-inset-bottom));
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
     pointer-events: none;
     z-index: 50;
   }
   .pedal {
     pointer-events: auto;
-    width: clamp(90px, 20vw, 140px);
-    height: clamp(90px, 20vw, 140px);
+    width: clamp(110px, 26vw, 160px);
+    height: clamp(110px, 26vw, 160px);
     border-radius: 50%;
     border: 3px solid rgba(255,255,255,0.85);
-    font-size: clamp(0.9rem, 2.6vw, 1.2rem);
+    font-size: clamp(0.8rem, 2.4vw, 1.05rem);
     font-weight: 900;
     font-family: inherit;
     color: #fff;
     text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px;
     transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
     letter-spacing: 0.5px;
     position: relative;
     overflow: hidden;
+    user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .pedal .icon {
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+    line-height: 1;
+    margin-bottom: 2px;
   }
   .pedal::before {
     content: '';
@@ -237,6 +244,16 @@
     box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4), inset 0 2px 0 rgba(255,255,255,0.2),
                 inset 0 -2px 0 rgba(0,0,0,0.3);
   }
+  /* Tip hint above pedals (first play) */
+  #controls-tip {
+    position: absolute; bottom: calc(180px + env(safe-area-inset-bottom));
+    left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.7); font-size: 0.85rem; font-weight: 600;
+    background: rgba(0,0,0,0.45); padding: 6px 14px; border-radius: 12px;
+    z-index: 49; pointer-events: none; opacity: 0; transition: opacity 0.4s;
+    white-space: nowrap;
+  }
+  #controls-tip.show { opacity: 1; }
 
   /* ===== GAME OVER SCREEN ===== */
   #game-over {
@@ -385,8 +402,9 @@
   </div>
 
   <div id="touch-controls" style="display:none;">
-    <button class="pedal" id="brake-pedal">◀ ТОРМ</button>
-    <button class="pedal" id="gas-pedal">ГАЗ ▶</button>
+    <button class="pedal" id="brake-pedal"><span class="icon">◀</span>ТОРМ</button>
+    <button class="pedal" id="gas-pedal"><span class="icon">▶</span>ГАЗ</button>
+    <div id="controls-tip">◀ тормоз · газ ▶ — удерживай от переворота</div>
   </div>
 
   <div id="game-over">
@@ -1280,6 +1298,14 @@ class OffroadScene extends Phaser.Scene {
     };
     bind(gasBtn, setGas);
     bind(brakeBtn, setBrake);
+
+    // Show controls tip on first start, auto-hide after 4s
+    const tip = document.getElementById('controls-tip');
+    if (tip && !this._tipShown) {
+      this._tipShown = true;
+      tip.classList.add('show');
+      setTimeout(() => tip.classList.remove('show'), 4500);
+    }
   }
 
   update(time, delta) {
@@ -1297,13 +1323,53 @@ class OffroadScene extends Phaser.Scene {
       S.wheelJointFront.enableMotor(true);
       S.startedMoving = true;
     } else if (brakePressed) {
-      S.wheelJointBack.setMotorSpeed(CFG.REVERSE_SPEED);
-      S.wheelJointFront.setMotorSpeed(CFG.REVERSE_SPEED);
-      S.wheelJointBack.enableMotor(true);
-      S.wheelJointFront.enableMotor(true);
+      // HCR-style: brake = decelerate forward motion first, then reverse
+      const carVel = S.carBody.getLinearVelocity().x;
+      if (carVel > 8) {
+        // Moving forward fast → brake hard (reverse motor speed but limited)
+        S.wheelJointBack.setMotorSpeed(CFG.REVERSE_SPEED);
+        S.wheelJointFront.setMotorSpeed(CFG.REVERSE_SPEED);
+        S.wheelJointBack.enableMotor(true);
+        S.wheelJointFront.enableMotor(true);
+      } else {
+        // Slow/stopped → full reverse
+        S.wheelJointBack.setMotorSpeed(CFG.REVERSE_SPEED);
+        S.wheelJointFront.setMotorSpeed(CFG.REVERSE_SPEED);
+        S.wheelJointBack.enableMotor(true);
+        S.wheelJointFront.enableMotor(true);
+      }
     } else {
       S.wheelJointBack.enableMotor(false);
       S.wheelJointFront.enableMotor(false);
+    }
+
+    // ===== Anti-flip assist (HCR-style weight shift) =====
+    // When the car nose tilts too far back (>35°) on a climb, apply counter-torque to prevent flipping
+    const carAngleNorm = ((ca % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    // Nose-up angle: positive when leaning back (rotation CCW in y-down = nose up going right)
+    // In y-down: angle 0 = level, positive = CW = nose down. We want to detect nose-up = negative angle.
+    // Normalize to [-PI, PI]
+    let tiltAngle = carAngleNorm;
+    if (tiltAngle > Math.PI) tiltAngle -= Math.PI * 2;
+    // tiltAngle < 0 = nose up (leaning back), > 0 = nose down
+    const noseUpAngle = -tiltAngle; // positive when nose up
+    // Apply counter-torque when nose is up beyond 30° (=0.52 rad)
+    if (noseUpAngle > 0.52 && gasPressed) {
+      // Counter the flip — apply CCW torque (negative in y-down) only if angular velocity is also flipping
+      const angVel = S.carBody.getAngularVelocity();
+      if (angVel < 0) { // rotating CCW = nose going up further
+        // Apply restoring torque proportional to over-tilt and angular velocity
+        const correction = Math.min(800, (noseUpAngle - 0.52) * 1500 + Math.abs(angVel) * 200);
+        S.carBody.applyAngularImpulse(-correction * dt, true);
+      }
+    }
+    // Also help recover when nose is way down (going downhill, about to flip forward)
+    if (noseUpAngle < -0.70 && brakePressed) {
+      const angVel = S.carBody.getAngularVelocity();
+      if (angVel > 0) {
+        const correction = Math.min(800, (-noseUpAngle - 0.70) * 1500 + Math.abs(angVel) * 200);
+        S.carBody.applyAngularImpulse(correction * dt, true);
+      }
     }
 
     // ===== Physics =====
