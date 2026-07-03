@@ -434,21 +434,21 @@
 const CFG = {
   GRAVITY_Y: 1400,
   PHYSICS_STEP: 1/60,
-  VEL_ITER: 10,
-  POS_ITER: 4,
-  CAR_W: 120, CAR_H: 32,
-  CAR_DENSITY: 0.0012,
+  VEL_ITER: 12,
+  POS_ITER: 6,
+  CAR_W: 120, CAR_H: 30,
+  CAR_DENSITY: 0.0006,
   WHEEL_RADIUS: 30,
-  WHEEL_DENSITY: 0.0018,
-  WHEEL_FRICTION: 5.0,
-  SUSPENSION_FREQ: 6.0,
-  SUSPENSION_DAMP: 0.5,
-  MOTOR_SPEED: 45,
-  REVERSE_SPEED: -25,
-  MOTOR_TORQUE: 480000,
+  WHEEL_DENSITY: 0.0009,
+  WHEEL_FRICTION: 6.0,
+  SUSPENSION_FREQ: 6.5,
+  SUSPENSION_DAMP: 0.55,
+  MOTOR_SPEED: 26,
+  REVERSE_SPEED: -16,
+  MOTOR_TORQUE: 2200000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
-  TERRAIN_INITIAL_FLAT: 10,
+  TERRAIN_INITIAL_FLAT: 12,
   FUEL_MAX: 100,
   FUEL_DRAIN_IDLE: 0.9,
   FUEL_DRAIN_GAS: 2.8,
@@ -567,13 +567,14 @@ function generateTerrainPoint(i) {
   if (i < CFG.TERRAIN_INITIAL_FLAT) return CFG.TERRAIN_BASE_Y;
   const x = i * CFG.TERRAIN_STEP;
   let y = CFG.TERRAIN_BASE_Y;
-  y += Math.sin(x * 0.005) * 75;
-  y += Math.sin(x * 0.013) * 38;
-  y += Math.sin(x * 0.029) * 18;
-  y += Math.sin(x * 0.061) * 9;
-  y += Math.sin(x * 0.13) * 4;
-  if (x > 4000) y += Math.sin(x * 0.008) * (Math.min(70, (x - 4000) * 0.02));
-  if (x > 8000) y += Math.sin(x * 0.011) * 50;
+  // Gentler hills — HCR-style rolling terrain, not too steep
+  y += Math.sin(x * 0.005) * 55;
+  y += Math.sin(x * 0.013) * 28;
+  y += Math.sin(x * 0.029) * 14;
+  y += Math.sin(x * 0.061) * 7;
+  y += Math.sin(x * 0.13) * 3;
+  if (x > 4000) y += Math.sin(x * 0.008) * (Math.min(50, (x - 4000) * 0.02));
+  if (x > 8000) y += Math.sin(x * 0.011) * 40;
   return y;
 }
 
@@ -642,18 +643,18 @@ function spawnTree(scene, x, y) {
 // ============================================================
 function createCar(scene, world, x, y) {
   const carBody = world.createDynamicBody({position: planck.Vec2(x, y)});
-  // Main chassis box
+  // Main chassis box (low, wide = stable)
   carBody.createFixture(planck.Box(CFG.CAR_W/2, CFG.CAR_H/2, planck.Vec2(0, 0), 0), {
     density: CFG.CAR_DENSITY, friction: 0.4, restitution: 0.05
   });
-  // Cabin fixture (offset up-back, smaller box)
-  carBody.createFixture(planck.Box(26, 18, planck.Vec2(-8, -26), 0), {
-    density: CFG.CAR_DENSITY * 0.6, friction: 0.4, restitution: 0.05
+  // Cabin fixture (offset up, smaller box)
+  carBody.createFixture(planck.Box(28, 16, planck.Vec2(-4, -24), 0), {
+    density: CFG.CAR_DENSITY * 0.5, friction: 0.4, restitution: 0.05
   });
   carBody.setBullet(true);
   carBody.setFixedRotation(false);
-  // Lower center of mass — more stable, less likely to flip
-  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 8), I: carBody.getInertia()};
+  // Lower center of mass significantly — very stable, hard to flip
+  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 14), I: carBody.getInertia()};
   carBody.setMassData(massData);
 
   const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 40, y + 22)});
@@ -754,67 +755,110 @@ function generateTextures(scene) {
   g.generateTexture('dust', 12, 12);
   g.destroy();
 
-  // ===== HCR-STYLE CAR BODY (detailed, with outline + highlights) =====
+  // ===== NEW CAR BODY — blue retro offroader (HCR style) =====
   // Canvas 220x120, origin at (110, 60)
   g = scene.make.graphics({x:0, y:0, add:false});
   // Drop shadow under car (soft)
-  g.fillStyle(0x000000, 0.22); g.fillRoundedRect(14, 70, 192, 14, 7);
-  // === Body outline (dark red, slightly larger) ===
-  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(8, 36, 204, 38, 10);
-  // === Lower body (darker red) ===
-  g.fillStyle(0xa83228, 1); g.fillRoundedRect(10, 38, 200, 34, 9);
-  // === Upper body (main red) ===
-  g.fillStyle(0xd43f31, 1); g.fillRoundedRect(12, 36, 196, 22, 8);
-  // === Top stripe (highlight) ===
-  g.fillStyle(0xff7b6b, 1); g.fillRoundedRect(14, 38, 192, 6, 3);
+  g.fillStyle(0x000000, 0.25); g.fillRoundedRect(16, 72, 188, 14, 7);
+
+  // === Body main outline (very dark blue) ===
+  g.fillStyle(0x0a1a3a, 1); g.fillRoundedRect(8, 34, 204, 40, 12);
+  // === Lower body (dark blue) ===
+  g.fillStyle(0x1e4a8a, 1); g.fillRoundedRect(10, 36, 200, 36, 11);
+  // === Upper body (bright blue) ===
+  g.fillStyle(0x3a78c8, 1); g.fillRoundedRect(12, 36, 196, 24, 10);
+  // === Top highlight (lighter blue) ===
+  g.fillStyle(0x6aa8e0, 1); g.fillRoundedRect(14, 38, 192, 6, 4);
+  // === Top stripe (white racing) ===
+  g.fillStyle(0xffffff, 0.9); g.fillRoundedRect(14, 44, 192, 3, 2);
+
   // === Cabin outline (dark) ===
-  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(48, 6, 104, 34, 10);
-  // === Cabin body ===
-  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(50, 8, 100, 30, 9);
-  g.fillStyle(0xd43f31, 1); g.fillRoundedRect(52, 8, 96, 22, 8);
-  // === Window (light blue gradient sim) ===
-  g.fillStyle(0x5ab8e8, 1); g.fillRoundedRect(56, 12, 88, 22, 6);
-  g.fillStyle(0x9dd8ff, 1); g.fillRoundedRect(58, 14, 84, 18, 5);
+  g.fillStyle(0x0a1a3a, 1); g.fillRoundedRect(46, 4, 108, 36, 12);
+  // === Cabin body (dark blue) ===
+  g.fillStyle(0x1e4a8a, 1); g.fillRoundedRect(48, 6, 104, 32, 11);
+  // === Cabin upper (bright blue) ===
+  g.fillStyle(0x3a78c8, 1); g.fillRoundedRect(50, 6, 100, 22, 10);
+  // === Roll bar (dark behind cabin) ===
+  g.fillStyle(0x0a1a3a, 1); g.fillRect(50, 6, 6, 32);
+
+  // === Window (cyan glass) ===
+  g.fillStyle(0x0a2a4a, 1); g.fillRoundedRect(58, 10, 88, 24, 6);
+  g.fillStyle(0x4ab8e8, 1); g.fillRoundedRect(60, 12, 84, 20, 5);
   // Window inner shadow (bottom)
-  g.fillStyle(0x4a8eb8, 0.5); g.fillRoundedRect(58, 28, 84, 6, 3);
-  // Window diagonal reflection
-  g.fillStyle(0xffffff, 0.55);
+  g.fillStyle(0x1a4068, 0.6); g.fillRoundedRect(60, 28, 84, 6, 3);
+  // Window diagonal reflection (white shine)
+  g.fillStyle(0xffffff, 0.5);
   g.beginPath();
-  g.moveTo(60, 14); g.lineTo(88, 14); g.lineTo(70, 30); g.lineTo(60, 30); g.closePath(); g.fillPath();
+  g.moveTo(62, 12); g.lineTo(82, 12); g.lineTo(68, 30); g.lineTo(62, 30); g.closePath(); g.fillPath();
   // Window frame (dark outline)
-  g.lineStyle(2.5, 0x3a0e08, 1); g.strokeRoundedRect(56, 12, 88, 22, 6);
-  // Window divider (pillar)
-  g.fillStyle(0x3a0e08, 1); g.fillRect(99, 12, 3, 22);
+  g.lineStyle(2.5, 0x0a1a3a, 1); g.strokeRoundedRect(58, 10, 88, 24, 6);
+  // Window divider (B-pillar)
+  g.fillStyle(0x0a1a3a, 1); g.fillRect(102, 10, 3, 24);
+
   // === Door cut line ===
-  g.lineStyle(2, 0x5a1812, 0.9);
-  g.beginPath(); g.moveTo(110, 38); g.lineTo(110, 70); g.strokePath();
+  g.lineStyle(1.8, 0x0a1a3a, 0.8);
+  g.beginPath(); g.moveTo(108, 38); g.lineTo(108, 72); g.strokePath();
   // Door handle
-  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(96, 48, 12, 3, 1);
-  // === Headlight (front = right side) ===
-  g.fillStyle(0x5a1812, 1); g.fillCircle(206, 52, 8);
-  g.fillStyle(0xffe066, 1); g.fillCircle(206, 52, 6);
-  g.fillStyle(0xffffff, 0.9); g.fillCircle(204, 50, 3);
+  g.fillStyle(0x0a1a3a, 1); g.fillRoundedRect(94, 50, 12, 3, 1);
+
+  // === Round headlight (front = right side) — HCR style ===
+  g.fillStyle(0x0a1a3a, 1); g.fillCircle(202, 50, 10);
+  g.fillStyle(0x222222, 1); g.fillCircle(202, 50, 8);
+  g.fillStyle(0xffe066, 1); g.fillCircle(202, 50, 7);
+  g.fillStyle(0xffffff, 0.9); g.fillCircle(200, 48, 3);
   // Headlight glow
-  g.fillStyle(0xffe066, 0.3); g.fillCircle(212, 52, 4);
-  // === Tail light (back = left side) ===
-  g.fillStyle(0x5a1812, 1); g.fillCircle(14, 52, 5);
-  g.fillStyle(0xff3322, 1); g.fillCircle(14, 52, 3);
-  // === Front bumper ===
-  g.fillStyle(0x3a3a3a, 1); g.fillRoundedRect(196, 64, 16, 8, 3);
-  g.fillStyle(0x666666, 1); g.fillRoundedRect(197, 64, 14, 3, 2);
+  g.fillStyle(0xffe066, 0.3); g.fillCircle(210, 50, 5);
+  g.fillStyle(0xffe066, 0.15); g.fillCircle(216, 50, 7);
+
+  // === Round tail light (back = left side) ===
+  g.fillStyle(0x0a1a3a, 1); g.fillCircle(18, 50, 7);
+  g.fillStyle(0xff3322, 1); g.fillCircle(18, 50, 5);
+  g.fillStyle(0xff8866, 0.7); g.fillCircle(17, 49, 2);
+
+  // === Front grille (between headlight and body) ===
+  g.fillStyle(0x0a1a3a, 1); g.fillRoundedRect(184, 48, 18, 12, 2);
+  g.fillStyle(0x222222, 1);
+  g.fillRect(186, 50, 14, 1.5);
+  g.fillRect(186, 53, 14, 1.5);
+  g.fillRect(186, 56, 14, 1.5);
+
+  // === Front bumper (chrome silver) ===
+  g.fillStyle(0x3a3a3a, 1); g.fillRoundedRect(194, 64, 18, 10, 3);
+  g.fillStyle(0x999999, 1); g.fillRoundedRect(195, 65, 16, 4, 2);
+  g.fillStyle(0xdddddd, 1); g.fillRoundedRect(195, 65, 16, 2, 2);
   // === Back bumper ===
-  g.fillStyle(0x3a3a3a, 1); g.fillRoundedRect(8, 64, 16, 8, 3);
-  g.fillStyle(0x666666, 1); g.fillRoundedRect(9, 64, 14, 3, 2);
+  g.fillStyle(0x3a3a3a, 1); g.fillRoundedRect(8, 64, 18, 10, 3);
+  g.fillStyle(0x999999, 1); g.fillRoundedRect(9, 65, 16, 4, 2);
+  g.fillStyle(0xdddddd, 1); g.fillRoundedRect(9, 65, 16, 2, 2);
+
   // === Exhaust pipe (back-bottom) ===
-  g.fillStyle(0x222222, 1); g.fillCircle(8, 58, 5);
-  g.fillStyle(0x444444, 1); g.fillCircle(8, 58, 3);
+  g.fillStyle(0x222222, 1); g.fillCircle(8, 60, 5);
+  g.fillStyle(0x555555, 1); g.fillCircle(8, 60, 3);
+  g.fillStyle(0x0a0a0a, 1); g.fillCircle(8, 60, 1.5);
+
   // === Wheel arches (dark cutouts above wheels) ===
-  g.fillStyle(0x2a0805, 1);
-  g.beginPath(); g.arc(38, 70, 26, Math.PI, 0, false); g.lineTo(64, 74); g.lineTo(12, 74); g.closePath(); g.fillPath();
-  g.beginPath(); g.arc(182, 70, 26, Math.PI, 0, false); g.lineTo(208, 74); g.lineTo(156, 74); g.closePath(); g.fillPath();
-  // === Side stripe (racing) ===
-  g.fillStyle(0xffffff, 0.85); g.fillRoundedRect(28, 52, 168, 4, 2);
-  g.fillStyle(0x5a1812, 0.5); g.fillRoundedRect(28, 56, 168, 2, 1);
+  g.fillStyle(0x050a18, 1);
+  g.beginPath(); g.arc(38, 72, 28, Math.PI, 0, false); g.lineTo(66, 76); g.lineTo(10, 76); g.closePath(); g.fillPath();
+  g.beginPath(); g.arc(182, 72, 28, Math.PI, 0, false); g.lineTo(210, 76); g.lineTo(154, 76); g.closePath(); g.fillPath();
+
+  // === Side stripe (white racing diagonal) ===
+  g.fillStyle(0xffffff, 0.9);
+  g.beginPath();
+  g.moveTo(28, 50); g.lineTo(40, 50); g.lineTo(36, 58); g.lineTo(24, 58); g.closePath(); g.fillPath();
+  g.beginPath();
+  g.moveTo(180, 50); g.lineTo(192, 50); g.lineTo(188, 58); g.lineTo(176, 58); g.closePath(); g.fillPath();
+
+  // === Front brush guard (offroad bar) ===
+  g.lineStyle(2.5, 0x222222, 1);
+  g.beginPath();
+  g.moveTo(196, 46); g.lineTo(210, 42); g.lineTo(210, 60); g.lineTo(196, 64);
+  g.moveTo(204, 42); g.lineTo(204, 60);
+  g.strokePath();
+
+  // === Roof rack (top of cabin) ===
+  g.fillStyle(0x222222, 1); g.fillRoundedRect(54, 2, 92, 4, 2);
+  g.fillStyle(0x444444, 1); g.fillRoundedRect(56, 3, 88, 2, 1);
+
   g.generateTexture('carBody', 220, 120);
   g.destroy();
 
@@ -915,15 +959,20 @@ function generateTextures(scene) {
   // Mouth (small line in beard)
   g.lineStyle(1.8, 0x5a3015, 1);
   g.beginPath(); g.arc(35, 42, 7, 0.25, Math.PI - 0.25, false); g.strokePath();
-  // === Cap (red, on top) ===
-  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(8, 14, 54, 14, 5);
-  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(10, 14, 50, 12, 4);
-  g.fillStyle(0xd43f31, 1); g.fillRoundedRect(12, 14, 46, 5, 3);
-  // Cap brim (front = right)
-  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(32, 18, 30, 5, 2);
-  g.fillStyle(0x7a1f15, 1); g.fillRoundedRect(34, 18, 26, 3, 2);
-  // Cap logo (small white dot)
-  g.fillStyle(0xffffff, 0.9); g.fillCircle(28, 19, 2);
+  // === Helmet (orange construction/offroad helmet, HCR-style) ===
+  // Helmet outline (dark orange)
+  g.fillStyle(0x6a3010, 1); g.fillRoundedRect(8, 10, 54, 22, 11);
+  // Helmet main (bright orange)
+  g.fillStyle(0xe87218, 1); g.fillRoundedRect(10, 12, 50, 18, 10);
+  // Helmet highlight (lighter orange)
+  g.fillStyle(0xffa050, 1); g.fillRoundedRect(12, 12, 46, 8, 8);
+  // Helmet stripe (white)
+  g.fillStyle(0xffffff, 0.9); g.fillRoundedRect(10, 18, 50, 3, 2);
+  // Helmet logo (small dark dot)
+  g.fillStyle(0x6a3010, 1); g.fillCircle(35, 16, 2.5);
+  // Helmet visor brim (front = right)
+  g.fillStyle(0x6a3010, 1); g.fillRoundedRect(34, 18, 26, 5, 2);
+  g.fillStyle(0x8a4018, 1); g.fillRoundedRect(36, 18, 22, 3, 2);
   // Ears
   g.fillStyle(0xe0b886, 1); g.fillCircle(15, 37, 4);
   g.fillStyle(0xe0b886, 1); g.fillCircle(55, 37, 4);
@@ -1364,19 +1413,20 @@ class OffroadScene extends Phaser.Scene {
     if (tiltAngle > Math.PI) tiltAngle -= Math.PI * 2;
     // In y-down: angle < 0 = nose up (leaning back), > 0 = nose down
     const noseUpAngle = -tiltAngle; // positive when nose up
-    // Apply counter-torque when nose is up beyond 30° (=0.52 rad)
-    if (noseUpAngle > 0.52 && gasPressed) {
+    // Apply counter-torque when nose is up beyond 22 deg (=0.38 rad) — earlier intervention
+    if (noseUpAngle > 0.38) {
       const angVel = S.carBody.getAngularVelocity();
       if (angVel < 0) { // rotating CCW = nose going up further
-        const correction = Math.min(800, (noseUpAngle - 0.52) * 1500 + Math.abs(angVel) * 200);
+        // Strong restoring torque proportional to over-tilt and angular velocity
+        const correction = Math.min(4000, (noseUpAngle - 0.38) * 4000 + Math.abs(angVel) * 600);
         S.carBody.applyAngularImpulse(-correction * dt, true);
       }
     }
     // Also help recover when nose is way down (going downhill, about to flip forward)
-    if (noseUpAngle < -0.70 && brakePressed) {
+    if (noseUpAngle < -0.55) {
       const angVel = S.carBody.getAngularVelocity();
       if (angVel > 0) {
-        const correction = Math.min(800, (-noseUpAngle - 0.70) * 1500 + Math.abs(angVel) * 200);
+        const correction = Math.min(4000, (-noseUpAngle - 0.55) * 4000 + Math.abs(angVel) * 600);
         S.carBody.applyAngularImpulse(correction * dt, true);
       }
     }
