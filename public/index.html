@@ -418,22 +418,22 @@ const CFG = {
   PHYSICS_STEP: 1/60,
   VEL_ITER: 10,
   POS_ITER: 4,
-  CAR_W: 110, CAR_H: 36,
-  CAR_DENSITY: 0.002,
-  WHEEL_RADIUS: 26,
-  WHEEL_DENSITY: 0.003,
-  WHEEL_FRICTION: 2.5,
-  SUSPENSION_FREQ: 4.5,
-  SUSPENSION_DAMP: 0.65,
-  MOTOR_SPEED: 38,
-  REVERSE_SPEED: -22,
-  MOTOR_TORQUE: 250000,
+  CAR_W: 120, CAR_H: 32,
+  CAR_DENSITY: 0.0018,
+  WHEEL_RADIUS: 28,
+  WHEEL_DENSITY: 0.0028,
+  WHEEL_FRICTION: 3.5,
+  SUSPENSION_FREQ: 5.5,
+  SUSPENSION_DAMP: 0.55,
+  MOTOR_SPEED: 32,
+  REVERSE_SPEED: -18,
+  MOTOR_TORQUE: 180000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
-  TERRAIN_INITIAL_FLAT: 8,
+  TERRAIN_INITIAL_FLAT: 10,
   FUEL_MAX: 100,
-  FUEL_DRAIN_IDLE: 1.0,
-  FUEL_DRAIN_GAS: 3.2,
+  FUEL_DRAIN_IDLE: 0.9,
+  FUEL_DRAIN_GAS: 2.8,
   FUEL_PICKUP: 38,
   COIN_VALUE: 1,
   CAM_LERP: 0.12,
@@ -620,25 +620,31 @@ function spawnTree(scene, x, y) {
 }
 
 // ============================================================
-//  CAR
+//  CAR (Hill Climb Racing style)
 // ============================================================
 function createCar(scene, world, x, y) {
   const carBody = world.createDynamicBody({position: planck.Vec2(x, y)});
+  // Main chassis box
   carBody.createFixture(planck.Box(CFG.CAR_W/2, CFG.CAR_H/2, planck.Vec2(0, 0), 0), {
-    density: CFG.CAR_DENSITY, friction: 0.5, restitution: 0.05
+    density: CFG.CAR_DENSITY, friction: 0.4, restitution: 0.05
   });
-  carBody.createFixture(planck.Box(32, 16, planck.Vec2(-6, -24), 0), {
-    density: 0.3, friction: 0.5, restitution: 0.05
+  // Cabin fixture (offset up-back, smaller box)
+  carBody.createFixture(planck.Box(26, 18, planck.Vec2(-8, -26), 0), {
+    density: CFG.CAR_DENSITY * 0.6, friction: 0.4, restitution: 0.05
   });
   carBody.setBullet(true);
+  carBody.setFixedRotation(false);
+  // Lower center of mass — more stable, less likely to flip
+  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 6), I: carBody.getInertia()};
+  carBody.setMassData(massData);
 
-  const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 36, y + 24)});
+  const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 38, y + 22)});
   wheelBack.createFixture(planck.Circle(CFG.WHEEL_RADIUS), {
     density: CFG.WHEEL_DENSITY, friction: CFG.WHEEL_FRICTION, restitution: 0.1
   });
   wheelBack.setBullet(true);
 
-  const wheelFront = world.createDynamicBody({position: planck.Vec2(x + 36, y + 24)});
+  const wheelFront = world.createDynamicBody({position: planck.Vec2(x + 38, y + 22)});
   wheelFront.createFixture(planck.Circle(CFG.WHEEL_RADIUS), {
     density: CFG.WHEEL_DENSITY, friction: CFG.WHEEL_FRICTION, restitution: 0.1
   });
@@ -728,6 +734,112 @@ function generateTextures(scene) {
   g.fillStyle(0xffffff, 0.7); g.fillCircle(6, 6, 6);
   g.fillStyle(0xffffff, 0.3); g.fillCircle(6, 6, 5);
   g.generateTexture('dust', 12, 12);
+  g.destroy();
+
+  // ===== HCR-STYLE CAR BODY =====
+  // Canvas 200x100, origin at (100, 50) — wheels attach at y=+22
+  g = scene.make.graphics({x:0, y:0, add:false});
+  // Drop shadow under car
+  g.fillStyle(0x000000, 0.18); g.fillRoundedRect(8, 56, 184, 12, 6);
+  // Main body — orange/red cartoon car (HCR style)
+  // Lower body (chassis)
+  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(10, 30, 180, 28, 8);
+  // Upper body highlight
+  g.fillStyle(0xe74c3c, 1); g.fillRoundedRect(12, 28, 176, 18, 6);
+  // Top stripe (brighter)
+  g.fillStyle(0xff7b6b, 1); g.fillRoundedRect(14, 30, 172, 5, 3);
+  // Cabin (smaller box on top, biased toward back = left side)
+  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(50, 8, 90, 28, 8);
+  g.fillStyle(0xe74c3c, 1); g.fillRoundedRect(52, 8, 86, 20, 6);
+  // Window (light blue)
+  g.fillStyle(0x9dd8ff, 1); g.fillRoundedRect(56, 12, 78, 18, 5);
+  // Window reflection
+  g.fillStyle(0xffffff, 0.5); g.fillRoundedRect(58, 13, 30, 10, 3);
+  // Window frame
+  g.lineStyle(2, 0x7a1f15, 1); g.strokeRoundedRect(56, 12, 78, 18, 5);
+  // Door cut line
+  g.lineStyle(1.5, 0x7a1f15, 0.8);
+  g.beginPath(); g.moveTo(95, 30); g.lineTo(95, 56); g.strokePath();
+  // Headlight (front = right side)
+  g.fillStyle(0xffe066, 1); g.fillCircle(184, 42, 6);
+  g.fillStyle(0xffffff, 0.8); g.fillCircle(183, 41, 3);
+  // Tail light (back = left side)
+  g.fillStyle(0xff4444, 1); g.fillCircle(14, 42, 4);
+  // Bumper highlight
+  g.fillStyle(0x7a1f15, 1); g.fillRect(10, 50, 180, 4);
+  // Exhaust pipe (back-bottom)
+  g.fillStyle(0x333333, 1); g.fillRect(6, 48, 10, 6);
+  g.generateTexture('carBody', 200, 100);
+  g.destroy();
+
+  // ===== HCR-STYLE WHEEL =====
+  // Canvas 80x80, origin center (40, 40)
+  g = scene.make.graphics({x:0, y:0, add:false});
+  // Tire (outer black ring)
+  g.fillStyle(0x1a1a1a, 1); g.fillCircle(40, 40, 38);
+  // Tire tread pattern (small notches around)
+  g.fillStyle(0x333333, 1);
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    const tx = 40 + Math.cos(a) * 36;
+    const ty = 40 + Math.sin(a) * 36;
+    g.fillCircle(tx, ty, 3);
+  }
+  // Inner tire shadow
+  g.fillStyle(0x0a0a0a, 1); g.fillCircle(40, 40, 32);
+  // Hub (silver disc)
+  g.fillStyle(0x999999, 1); g.fillCircle(40, 40, 22);
+  g.fillStyle(0xbbbbbb, 1); g.fillCircle(40, 40, 18);
+  // Spokes (5 spokes)
+  g.fillStyle(0x666666, 1);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    g.beginPath();
+    g.moveTo(40, 40);
+    g.lineTo(40 + Math.cos(a) * 20, 40 + Math.sin(a) * 20);
+    g.lineTo(40 + Math.cos(a + 0.15) * 6, 40 + Math.sin(a + 0.15) * 6);
+    g.lineTo(40 + Math.cos(a - 0.15) * 6, 40 + Math.sin(a - 0.15) * 6);
+    g.closePath();
+    g.fillPath();
+  }
+  // Hub center (dark cap)
+  g.fillStyle(0x444444, 1); g.fillCircle(40, 40, 7);
+  g.fillStyle(0x222222, 1); g.fillCircle(40, 40, 4);
+  // Highlight on tire (top-left shine)
+  g.fillStyle(0x555555, 0.6);
+  g.beginPath(); g.arc(40, 40, 38, Math.PI * 1.1, Math.PI * 1.4, false); g.strokePath();
+  g.lineStyle(3, 0x444444, 0.5);
+  g.beginPath(); g.arc(40, 40, 36, Math.PI * 1.15, Math.PI * 1.35, false); g.strokePath();
+  g.generateTexture('wheel', 80, 80);
+  g.destroy();
+
+  // ===== HCR-STYLE DRIVER HEAD =====
+  // Canvas 60x60, origin center (30, 30)
+  g = scene.make.graphics({x:0, y:0, add:false});
+  // Hair back
+  g.fillStyle(0x3a2515, 1); g.fillCircle(30, 28, 22);
+  // Skin (face)
+  g.fillStyle(0xf0c896, 1); g.fillCircle(30, 30, 18);
+  // Sunglasses (black bar)
+  g.fillStyle(0x1a1a1a, 1); g.fillRoundedRect(14, 26, 32, 8, 2);
+  // Sunglasses shine
+  g.fillStyle(0x4a8aff, 0.5); g.fillRoundedRect(16, 27, 12, 3, 1);
+  g.fillStyle(0x4a8aff, 0.5); g.fillRoundedRect(32, 27, 12, 3, 1);
+  // Beard (dark, around chin)
+  g.fillStyle(0x3a2515, 1);
+  g.beginPath(); g.arc(30, 36, 14, 0.2, Math.PI - 0.2, false); g.lineTo(40, 40); g.lineTo(20, 40); g.closePath(); g.fillPath();
+  // Smile (small line in beard)
+  g.lineStyle(1.5, 0x6a4525, 1);
+  g.beginPath(); g.arc(30, 36, 6, 0.2, Math.PI - 0.2, false); g.strokePath();
+  // Hat/cap (red, on top)
+  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(10, 12, 40, 12, 4);
+  g.fillStyle(0xe74c3c, 1); g.fillRoundedRect(12, 12, 36, 5, 3);
+  // Cap brim (front)
+  g.fillStyle(0x7a1f15, 1); g.fillRect(28, 16, 22, 4);
+  // Ear hint
+  g.fillStyle(0xe0b886, 1); g.fillCircle(14, 32, 3);
+  g.fillStyle(0xe0b886, 1); g.fillCircle(46, 32, 3);
+  g.generateTexture('driver', 60, 60);
   g.destroy();
 }
 
@@ -939,10 +1051,7 @@ class OffroadScene extends Phaser.Scene {
   constructor() { super('offroad'); }
 
   preload() {
-    // Load AI-generated sprites
-    this.load.image('nivaSprite', '/sprites/niva_side.png');
-    this.load.image('wheelSprite', '/sprites/wheel.png');
-    this.load.image('driverSprite', '/sprites/driver_head.png');
+    // All graphics are procedural (no external assets)
   }
 
   create() {
@@ -963,36 +1072,44 @@ class OffroadScene extends Phaser.Scene {
     redrawTerrain(this);
 
     // Car
-    const startX = 120, startY = CFG.TERRAIN_BASE_Y - 90;
+    const startX = 140, startY = CFG.TERRAIN_BASE_Y - 95;
     const car = createCar(this, this.physicsWorld, startX, startY);
     S.carBody = car.carBody;
     S.wheelBack = car.wheelBack;
     S.wheelFront = car.wheelFront;
 
-    // === Car sprite (Niva + driver) ===
+    // === Car sprite (HCR-style, assembled from procedural textures) ===
+    // carBody texture is 200x100, physics chassis center is (0,0) — top of body at y=-50
+    // We want body bottom to align with chassis center (0,0); chassis sits at y=0 in container
+    // So body texture center should be at y = -(50-22) = -28 (body bottom at +22 ≈ wheel center)
     S.carSprite = this.add.container(startX, startY);
     S.carSprite.setDepth(10);
 
     // Shadow under car (separate, follows car but no rotation)
-    S.carShadow = this.add.ellipse(startX, startY + 38, 130, 18, 0x000000, 0.35);
+    S.carShadow = this.add.ellipse(startX, startY + 42, 160, 22, 0x000000, 0.32);
     S.carShadow.setDepth(9);
 
-    // Niva sprite (AI-generated)
-    const nivaImg = this.add.image(0, -6, 'nivaSprite');
-    nivaImg.setOrigin(0.5, 0.5);
-    nivaImg.setScale(0.16); // 1024px → ~164px wide
-    // Driver head (AI-generated)
-    const driverHead = this.add.image(-6, -28, 'driverSprite');
+    // Body sprite: texture is 200x100, origin at center
+    // Chassis physics box is 120x32 centered at (0,0) — top at -16, bottom at +16
+    // We want texture's body-bottom (y=58 in tex = +8 from center) to sit at chassis bottom (y=+16)
+    // So image center y = 16 - (58-50) = 16 - 8 = 8 ... but we want body slightly above wheels
+    // Wheels at y=+22 with radius 28 — top of wheel at y=-6. Body bottom should be ~y=+10.
+    // Body bottom in texture is y=58 (tex), so image center = 10 - (58-50) = 10 - 8 = 2. Use 0.
+    const bodyImg = this.add.image(0, 0, 'carBody');
+    bodyImg.setOrigin(0.5, 0.5);
+    // Driver head — sits in cabin window area (cabin y=8..28 in texture, center at 18; in container that's -32)
+    const driverHead = this.add.image(2, -32, 'driver');
     driverHead.setOrigin(0.5, 0.5);
-    driverHead.setScale(0.10); // 1024px → ~100px
+    driverHead.setScale(0.55);
     S.driverSprite = driverHead;
-    S.carSprite.add([nivaImg, driverHead]);
+    S.carSprite.add([bodyImg, driverHead]);
 
-    // Wheels (AI-generated)
-    const wheelScale = (CFG.WHEEL_RADIUS * 2) / 1024; // fit to physics radius
-    S.wheelBSprite = this.add.image(startX - 36, startY + 24, 'wheelSprite');
+    // Wheels — procedural texture, sized to physics radius
+    const wheelTexRadius = 40; // texture is 80x80
+    const wheelScale = CFG.WHEEL_RADIUS / wheelTexRadius;
+    S.wheelBSprite = this.add.image(startX - 38, startY + 22, 'wheel');
     S.wheelBSprite.setDepth(11); S.wheelBSprite.setScale(wheelScale);
-    S.wheelFSprite = this.add.image(startX + 36, startY + 24, 'wheelSprite');
+    S.wheelFSprite = this.add.image(startX + 38, startY + 22, 'wheel');
     S.wheelFSprite.setDepth(11); S.wheelFSprite.setScale(wheelScale);
 
     // === Particles ===
@@ -1159,7 +1276,7 @@ class OffroadScene extends Phaser.Scene {
     const angVel = S.carBody.getAngularVelocity();
     S.driverTargetRot = Phaser.Math.Clamp(-angVel * 0.05, -0.6, 0.6);
     S.driverSprite.rotation = Phaser.Math.Linear(S.driverSprite.rotation, S.driverTargetRot, 0.18);
-    S.driverSprite.y = -28 + Math.sin(time * 0.006) * 1.8;
+    S.driverSprite.y = -32 + Math.sin(time * 0.006) * 1.8;
 
     // ===== Camera with shake =====
     const targetX = cp.x + CFG.CAM_OFFSET_X;
@@ -1223,8 +1340,9 @@ class OffroadScene extends Phaser.Scene {
 
     // ===== Exhaust =====
     if (S.startedMoving && gasPressed && time - S.lastDirtTime > 50) {
-      const ex = cp.x - Math.cos(ca) * 55;
-      const ey = cp.y - Math.sin(ca) * 55 - 8;
+      // Exhaust pipe is at back of car (left side), slightly below body
+      const ex = cp.x - Math.cos(ca) * 95 + Math.sin(ca) * 10;
+      const ey = cp.y - Math.sin(ca) * 95 - Math.cos(ca) * 10;
       S.exhaustEmitter.emitParticleAt(ex, ey, 1);
     }
 
@@ -1280,8 +1398,8 @@ class OffroadScene extends Phaser.Scene {
     } else {
       S.flipTimer = 0;
     }
-    const headWorldX = cp.x + Math.sin(ca) * 26;
-    const headWorldY = cp.y - Math.cos(ca) * 26;
+    const headWorldX = cp.x + Math.sin(ca) * 40;
+    const headWorldY = cp.y - Math.cos(ca) * 40;
     const terrainSegIdx = Math.floor(headWorldX / CFG.TERRAIN_STEP);
     if (terrainSegIdx >= 0 && terrainSegIdx < S.terrainPoints.length) {
       const tp = S.terrainPoints[terrainSegIdx];
