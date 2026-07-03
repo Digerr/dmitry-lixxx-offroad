@@ -440,12 +440,12 @@ const CFG = {
   CAR_DENSITY: 0.0025,
   WHEEL_RADIUS: 30,
   WHEEL_DENSITY: 0.0030,
-  WHEEL_FRICTION: 3.0,
+  WHEEL_FRICTION: 5.0,
   SUSPENSION_FREQ: 6.5,
   SUSPENSION_DAMP: 0.55,
   MOTOR_SPEED: 18,
   REVERSE_SPEED: -12,
-  MOTOR_TORQUE: 3000000,
+  MOTOR_TORQUE: 1500000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
   TERRAIN_INITIAL_FLAT: 14,
@@ -459,6 +459,7 @@ const CFG = {
   CAM_OFFSET_Y: -70,
   CAM_ZOOM: 0.85,
   CAM_SNAP_FIRST: true,
+  MOTOR_RAMP_TIME: 700,
 };
 
 const S = {
@@ -654,7 +655,7 @@ function createCar(scene, world, x, y) {
   carBody.setBullet(true);
   carBody.setFixedRotation(false);
   // Lower center of mass + very high rotational inertia = very stable, hard to flip
-  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 20), I: carBody.getInertia() * 3.0};
+  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 20), I: carBody.getInertia() * 2.5};
   carBody.setMassData(massData);
 
   const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 40, y + 22)});
@@ -1366,28 +1367,28 @@ class OffroadScene extends Phaser.Scene {
     const brakePressed = S.inputBrake || this.cursors.left.isDown || this.keyA.isDown || this.keyS.isDown;
 
     if (gasPressed) {
+      // Ramp up motor torque over MOTOR_RAMP_TIME ms to avoid instant flip on start
+      if (!S._gasStartTime) S._gasStartTime = time;
+      const rampT = Math.min(1, (time - S._gasStartTime) / CFG.MOTOR_RAMP_TIME);
+      const torque = CFG.MOTOR_TORQUE * (0.15 + 0.85 * rampT);
+      S.wheelJointBack.setMaxMotorTorque(torque);
+      S.wheelJointFront.setMaxMotorTorque(torque);
       S.wheelJointBack.setMotorSpeed(CFG.MOTOR_SPEED);
       S.wheelJointFront.setMotorSpeed(CFG.MOTOR_SPEED);
       S.wheelJointBack.enableMotor(true);
       S.wheelJointFront.enableMotor(true);
       S.startedMoving = true;
     } else if (brakePressed) {
+      S._gasStartTime = 0;
       // HCR-style: brake = decelerate forward motion first, then reverse
-      const carVel = S.carBody.getLinearVelocity().x;
-      if (carVel > 8) {
-        // Moving forward fast → brake hard (reverse motor speed but limited)
-        S.wheelJointBack.setMotorSpeed(CFG.REVERSE_SPEED);
-        S.wheelJointFront.setMotorSpeed(CFG.REVERSE_SPEED);
-        S.wheelJointBack.enableMotor(true);
-        S.wheelJointFront.enableMotor(true);
-      } else {
-        // Slow/stopped → full reverse
-        S.wheelJointBack.setMotorSpeed(CFG.REVERSE_SPEED);
-        S.wheelJointFront.setMotorSpeed(CFG.REVERSE_SPEED);
-        S.wheelJointBack.enableMotor(true);
-        S.wheelJointFront.enableMotor(true);
-      }
+      S.wheelJointBack.setMaxMotorTorque(CFG.MOTOR_TORQUE * 0.6);
+      S.wheelJointFront.setMaxMotorTorque(CFG.MOTOR_TORQUE * 0.6);
+      S.wheelJointBack.setMotorSpeed(CFG.REVERSE_SPEED);
+      S.wheelJointFront.setMotorSpeed(CFG.REVERSE_SPEED);
+      S.wheelJointBack.enableMotor(true);
+      S.wheelJointFront.enableMotor(true);
     } else {
+      S._gasStartTime = 0;
       S.wheelJointBack.enableMotor(false);
       S.wheelJointFront.enableMotor(false);
     }
@@ -1432,12 +1433,13 @@ class OffroadScene extends Phaser.Scene {
     }
 
     // ===== Auto-cut gas on extreme nose-up (HCR-style — driver backs off) =====
-    // If nose is more than 32° up AND gas is pressed, cut motor to prevent flip
-    const gasEffective = gasPressed && noseUpAngle < 0.56;
-    if (!gasEffective && gasPressed && noseUpAngle >= 0.56) {
+    // If nose is more than 25° up AND gas is pressed, cut motor to prevent flip
+    const gasEffective = gasPressed && noseUpAngle < 0.45;
+    if (!gasEffective && gasPressed && noseUpAngle >= 0.45) {
       // Temporarily disable motor to let front end drop
       S.wheelJointBack.enableMotor(false);
       S.wheelJointFront.enableMotor(false);
+      S._gasStartTime = 0; // reset ramp so it restarts gently
     }
 
     S.carSprite.x = cp.x;
