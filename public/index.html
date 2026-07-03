@@ -419,15 +419,15 @@ const CFG = {
   VEL_ITER: 10,
   POS_ITER: 4,
   CAR_W: 120, CAR_H: 32,
-  CAR_DENSITY: 0.0018,
-  WHEEL_RADIUS: 28,
-  WHEEL_DENSITY: 0.0028,
-  WHEEL_FRICTION: 3.5,
-  SUSPENSION_FREQ: 5.5,
-  SUSPENSION_DAMP: 0.55,
-  MOTOR_SPEED: 32,
-  REVERSE_SPEED: -18,
-  MOTOR_TORQUE: 180000,
+  CAR_DENSITY: 0.0012,
+  WHEEL_RADIUS: 30,
+  WHEEL_DENSITY: 0.0018,
+  WHEEL_FRICTION: 5.0,
+  SUSPENSION_FREQ: 6.0,
+  SUSPENSION_DAMP: 0.5,
+  MOTOR_SPEED: 45,
+  REVERSE_SPEED: -25,
+  MOTOR_TORQUE: 480000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
   TERRAIN_INITIAL_FLAT: 10,
@@ -635,16 +635,16 @@ function createCar(scene, world, x, y) {
   carBody.setBullet(true);
   carBody.setFixedRotation(false);
   // Lower center of mass — more stable, less likely to flip
-  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 6), I: carBody.getInertia()};
+  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 8), I: carBody.getInertia()};
   carBody.setMassData(massData);
 
-  const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 38, y + 22)});
+  const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 40, y + 22)});
   wheelBack.createFixture(planck.Circle(CFG.WHEEL_RADIUS), {
     density: CFG.WHEEL_DENSITY, friction: CFG.WHEEL_FRICTION, restitution: 0.1
   });
   wheelBack.setBullet(true);
 
-  const wheelFront = world.createDynamicBody({position: planck.Vec2(x + 38, y + 22)});
+  const wheelFront = world.createDynamicBody({position: planck.Vec2(x + 40, y + 22)});
   wheelFront.createFixture(planck.Circle(CFG.WHEEL_RADIUS), {
     density: CFG.WHEEL_DENSITY, friction: CFG.WHEEL_FRICTION, restitution: 0.1
   });
@@ -736,110 +736,182 @@ function generateTextures(scene) {
   g.generateTexture('dust', 12, 12);
   g.destroy();
 
-  // ===== HCR-STYLE CAR BODY =====
-  // Canvas 200x100, origin at (100, 50) — wheels attach at y=+22
+  // ===== HCR-STYLE CAR BODY (detailed, with outline + highlights) =====
+  // Canvas 220x120, origin at (110, 60)
   g = scene.make.graphics({x:0, y:0, add:false});
-  // Drop shadow under car
-  g.fillStyle(0x000000, 0.18); g.fillRoundedRect(8, 56, 184, 12, 6);
-  // Main body — orange/red cartoon car (HCR style)
-  // Lower body (chassis)
-  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(10, 30, 180, 28, 8);
-  // Upper body highlight
-  g.fillStyle(0xe74c3c, 1); g.fillRoundedRect(12, 28, 176, 18, 6);
-  // Top stripe (brighter)
-  g.fillStyle(0xff7b6b, 1); g.fillRoundedRect(14, 30, 172, 5, 3);
-  // Cabin (smaller box on top, biased toward back = left side)
-  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(50, 8, 90, 28, 8);
-  g.fillStyle(0xe74c3c, 1); g.fillRoundedRect(52, 8, 86, 20, 6);
-  // Window (light blue)
-  g.fillStyle(0x9dd8ff, 1); g.fillRoundedRect(56, 12, 78, 18, 5);
-  // Window reflection
-  g.fillStyle(0xffffff, 0.5); g.fillRoundedRect(58, 13, 30, 10, 3);
-  // Window frame
-  g.lineStyle(2, 0x7a1f15, 1); g.strokeRoundedRect(56, 12, 78, 18, 5);
-  // Door cut line
-  g.lineStyle(1.5, 0x7a1f15, 0.8);
-  g.beginPath(); g.moveTo(95, 30); g.lineTo(95, 56); g.strokePath();
-  // Headlight (front = right side)
-  g.fillStyle(0xffe066, 1); g.fillCircle(184, 42, 6);
-  g.fillStyle(0xffffff, 0.8); g.fillCircle(183, 41, 3);
-  // Tail light (back = left side)
-  g.fillStyle(0xff4444, 1); g.fillCircle(14, 42, 4);
-  // Bumper highlight
-  g.fillStyle(0x7a1f15, 1); g.fillRect(10, 50, 180, 4);
-  // Exhaust pipe (back-bottom)
-  g.fillStyle(0x333333, 1); g.fillRect(6, 48, 10, 6);
-  g.generateTexture('carBody', 200, 100);
+  // Drop shadow under car (soft)
+  g.fillStyle(0x000000, 0.22); g.fillRoundedRect(14, 70, 192, 14, 7);
+  // === Body outline (dark red, slightly larger) ===
+  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(8, 36, 204, 38, 10);
+  // === Lower body (darker red) ===
+  g.fillStyle(0xa83228, 1); g.fillRoundedRect(10, 38, 200, 34, 9);
+  // === Upper body (main red) ===
+  g.fillStyle(0xd43f31, 1); g.fillRoundedRect(12, 36, 196, 22, 8);
+  // === Top stripe (highlight) ===
+  g.fillStyle(0xff7b6b, 1); g.fillRoundedRect(14, 38, 192, 6, 3);
+  // === Cabin outline (dark) ===
+  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(48, 6, 104, 34, 10);
+  // === Cabin body ===
+  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(50, 8, 100, 30, 9);
+  g.fillStyle(0xd43f31, 1); g.fillRoundedRect(52, 8, 96, 22, 8);
+  // === Window (light blue gradient sim) ===
+  g.fillStyle(0x5ab8e8, 1); g.fillRoundedRect(56, 12, 88, 22, 6);
+  g.fillStyle(0x9dd8ff, 1); g.fillRoundedRect(58, 14, 84, 18, 5);
+  // Window inner shadow (bottom)
+  g.fillStyle(0x4a8eb8, 0.5); g.fillRoundedRect(58, 28, 84, 6, 3);
+  // Window diagonal reflection
+  g.fillStyle(0xffffff, 0.55);
+  g.beginPath();
+  g.moveTo(60, 14); g.lineTo(88, 14); g.lineTo(70, 30); g.lineTo(60, 30); g.closePath(); g.fillPath();
+  // Window frame (dark outline)
+  g.lineStyle(2.5, 0x3a0e08, 1); g.strokeRoundedRect(56, 12, 88, 22, 6);
+  // Window divider (pillar)
+  g.fillStyle(0x3a0e08, 1); g.fillRect(99, 12, 3, 22);
+  // === Door cut line ===
+  g.lineStyle(2, 0x5a1812, 0.9);
+  g.beginPath(); g.moveTo(110, 38); g.lineTo(110, 70); g.strokePath();
+  // Door handle
+  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(96, 48, 12, 3, 1);
+  // === Headlight (front = right side) ===
+  g.fillStyle(0x5a1812, 1); g.fillCircle(206, 52, 8);
+  g.fillStyle(0xffe066, 1); g.fillCircle(206, 52, 6);
+  g.fillStyle(0xffffff, 0.9); g.fillCircle(204, 50, 3);
+  // Headlight glow
+  g.fillStyle(0xffe066, 0.3); g.fillCircle(212, 52, 4);
+  // === Tail light (back = left side) ===
+  g.fillStyle(0x5a1812, 1); g.fillCircle(14, 52, 5);
+  g.fillStyle(0xff3322, 1); g.fillCircle(14, 52, 3);
+  // === Front bumper ===
+  g.fillStyle(0x3a3a3a, 1); g.fillRoundedRect(196, 64, 16, 8, 3);
+  g.fillStyle(0x666666, 1); g.fillRoundedRect(197, 64, 14, 3, 2);
+  // === Back bumper ===
+  g.fillStyle(0x3a3a3a, 1); g.fillRoundedRect(8, 64, 16, 8, 3);
+  g.fillStyle(0x666666, 1); g.fillRoundedRect(9, 64, 14, 3, 2);
+  // === Exhaust pipe (back-bottom) ===
+  g.fillStyle(0x222222, 1); g.fillCircle(8, 58, 5);
+  g.fillStyle(0x444444, 1); g.fillCircle(8, 58, 3);
+  // === Wheel arches (dark cutouts above wheels) ===
+  g.fillStyle(0x2a0805, 1);
+  g.beginPath(); g.arc(38, 70, 26, Math.PI, 0, false); g.lineTo(64, 74); g.lineTo(12, 74); g.closePath(); g.fillPath();
+  g.beginPath(); g.arc(182, 70, 26, Math.PI, 0, false); g.lineTo(208, 74); g.lineTo(156, 74); g.closePath(); g.fillPath();
+  // === Side stripe (racing) ===
+  g.fillStyle(0xffffff, 0.85); g.fillRoundedRect(28, 52, 168, 4, 2);
+  g.fillStyle(0x5a1812, 0.5); g.fillRoundedRect(28, 56, 168, 2, 1);
+  g.generateTexture('carBody', 220, 120);
   g.destroy();
 
-  // ===== HCR-STYLE WHEEL =====
+  // ===== HCR-STYLE WHEEL (detailed) =====
   // Canvas 80x80, origin center (40, 40)
   g = scene.make.graphics({x:0, y:0, add:false});
-  // Tire (outer black ring)
-  g.fillStyle(0x1a1a1a, 1); g.fillCircle(40, 40, 38);
-  // Tire tread pattern (small notches around)
-  g.fillStyle(0x333333, 1);
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    const tx = 40 + Math.cos(a) * 36;
-    const ty = 40 + Math.sin(a) * 36;
-    g.fillCircle(tx, ty, 3);
-  }
-  // Inner tire shadow
-  g.fillStyle(0x0a0a0a, 1); g.fillCircle(40, 40, 32);
-  // Hub (silver disc)
-  g.fillStyle(0x999999, 1); g.fillCircle(40, 40, 22);
-  g.fillStyle(0xbbbbbb, 1); g.fillCircle(40, 40, 18);
-  // Spokes (5 spokes)
-  g.fillStyle(0x666666, 1);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
+  // Tire outer (deep black)
+  g.fillStyle(0x0d0d0d, 1); g.fillCircle(40, 40, 39);
+  // Tire main (black)
+  g.fillStyle(0x1a1a1a, 1); g.fillCircle(40, 40, 37);
+  // Tire tread blocks (chunky off-road pattern)
+  g.fillStyle(0x2a2a2a, 1);
+  for (let i = 0; i < 20; i++) {
+    const a = (i / 20) * Math.PI * 2;
     g.beginPath();
-    g.moveTo(40, 40);
-    g.lineTo(40 + Math.cos(a) * 20, 40 + Math.sin(a) * 20);
-    g.lineTo(40 + Math.cos(a + 0.15) * 6, 40 + Math.sin(a + 0.15) * 6);
-    g.lineTo(40 + Math.cos(a - 0.15) * 6, 40 + Math.sin(a - 0.15) * 6);
+    const r1 = 33, r2 = 38;
+    const a1 = a - 0.13, a2 = a + 0.13;
+    g.moveTo(40 + Math.cos(a1) * r1, 40 + Math.sin(a1) * r1);
+    g.lineTo(40 + Math.cos(a1) * r2, 40 + Math.sin(a1) * r2);
+    g.lineTo(40 + Math.cos(a2) * r2, 40 + Math.sin(a2) * r2);
+    g.lineTo(40 + Math.cos(a2) * r1, 40 + Math.sin(a2) * r1);
     g.closePath();
     g.fillPath();
   }
-  // Hub center (dark cap)
-  g.fillStyle(0x444444, 1); g.fillCircle(40, 40, 7);
-  g.fillStyle(0x222222, 1); g.fillCircle(40, 40, 4);
-  // Highlight on tire (top-left shine)
-  g.fillStyle(0x555555, 0.6);
-  g.beginPath(); g.arc(40, 40, 38, Math.PI * 1.1, Math.PI * 1.4, false); g.strokePath();
-  g.lineStyle(3, 0x444444, 0.5);
-  g.beginPath(); g.arc(40, 40, 36, Math.PI * 1.15, Math.PI * 1.35, false); g.strokePath();
+  // Tire inner shadow ring
+  g.fillStyle(0x080808, 1); g.fillCircle(40, 40, 32);
+  // Tire inner edge highlight
+  g.lineStyle(2, 0x3a3a3a, 0.8);
+  g.beginPath(); g.arc(40, 40, 32, 0, Math.PI * 2, false); g.strokePath();
+  // Hub outer (dark rim)
+  g.fillStyle(0x555555, 1); g.fillCircle(40, 40, 24);
+  // Hub (silver disc with gradient)
+  g.fillStyle(0x999999, 1); g.fillCircle(40, 40, 22);
+  g.fillStyle(0xbbbbbb, 1); g.fillCircle(39, 39, 19);
+  g.fillStyle(0xdddddd, 1); g.fillCircle(38, 38, 14);
+  // Spokes (5 chunky off-road spokes)
+  g.fillStyle(0x4a4a4a, 1);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    g.beginPath();
+    g.moveTo(40 + Math.cos(a) * 5, 40 + Math.sin(a) * 5);
+    g.lineTo(40 + Math.cos(a) * 22, 40 + Math.sin(a) * 22);
+    g.lineTo(40 + Math.cos(a + 0.25) * 8, 40 + Math.sin(a + 0.25) * 8);
+    g.closePath();
+    g.fillPath();
+  }
+  // Spoke highlights
+  g.fillStyle(0x888888, 0.7);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    g.beginPath();
+    g.moveTo(40 + Math.cos(a) * 7, 40 + Math.sin(a) * 7);
+    g.lineTo(40 + Math.cos(a) * 20, 40 + Math.sin(a) * 20);
+    g.lineTo(40 + Math.cos(a + 0.08) * 8, 40 + Math.sin(a + 0.08) * 8);
+    g.closePath();
+    g.fillPath();
+  }
+  // Hub center (dark cap with bolt)
+  g.fillStyle(0x333333, 1); g.fillCircle(40, 40, 8);
+  g.fillStyle(0x222222, 1); g.fillCircle(40, 40, 5);
+  g.fillStyle(0x666666, 1); g.fillCircle(40, 40, 2);
+  // Tire shine (top-left)
+  g.lineStyle(4, 0x555555, 0.4);
+  g.beginPath(); g.arc(40, 40, 36, Math.PI * 1.15, Math.PI * 1.45, false); g.strokePath();
+  g.lineStyle(2, 0x666666, 0.5);
+  g.beginPath(); g.arc(40, 40, 34, Math.PI * 1.2, Math.PI * 1.4, false); g.strokePath();
   g.generateTexture('wheel', 80, 80);
   g.destroy();
 
-  // ===== HCR-STYLE DRIVER HEAD =====
-  // Canvas 60x60, origin center (30, 30)
+  // ===== HCR-STYLE DRIVER HEAD (detailed) =====
+  // Canvas 70x70, origin center (35, 35)
   g = scene.make.graphics({x:0, y:0, add:false});
-  // Hair back
-  g.fillStyle(0x3a2515, 1); g.fillCircle(30, 28, 22);
+  // Hair back (dark)
+  g.fillStyle(0x2a1808, 1); g.fillCircle(35, 33, 25);
   // Skin (face)
-  g.fillStyle(0xf0c896, 1); g.fillCircle(30, 30, 18);
-  // Sunglasses (black bar)
-  g.fillStyle(0x1a1a1a, 1); g.fillRoundedRect(14, 26, 32, 8, 2);
-  // Sunglasses shine
-  g.fillStyle(0x4a8aff, 0.5); g.fillRoundedRect(16, 27, 12, 3, 1);
-  g.fillStyle(0x4a8aff, 0.5); g.fillRoundedRect(32, 27, 12, 3, 1);
+  g.fillStyle(0xf0c896, 1); g.fillCircle(35, 35, 20);
+  // Face shadow (right side)
+  g.fillStyle(0xd8b07a, 0.6);
+  g.beginPath(); g.arc(35, 35, 20, -Math.PI/4, Math.PI*3/4, false); g.lineTo(35, 55); g.closePath(); g.fillPath();
+  // Sunglasses frame (black bar)
+  g.fillStyle(0x0a0a0a, 1); g.fillRoundedRect(12, 30, 46, 10, 3);
+  // Sunglasses lenses (dark blue)
+  g.fillStyle(0x1a2a4a, 1); g.fillRoundedRect(14, 31, 18, 8, 2);
+  g.fillStyle(0x1a2a4a, 1); g.fillRoundedRect(38, 31, 18, 8, 2);
+  // Sunglasses shine (blue)
+  g.fillStyle(0x5a8aff, 0.7); g.fillRoundedRect(16, 32, 12, 3, 1);
+  g.fillStyle(0x5a8aff, 0.7); g.fillRoundedRect(40, 32, 12, 3, 1);
+  // Sunglasses white shine
+  g.fillStyle(0xffffff, 0.6); g.fillRoundedRect(17, 32, 6, 2, 1);
+  g.fillStyle(0xffffff, 0.6); g.fillRoundedRect(41, 32, 6, 2, 1);
   // Beard (dark, around chin)
-  g.fillStyle(0x3a2515, 1);
-  g.beginPath(); g.arc(30, 36, 14, 0.2, Math.PI - 0.2, false); g.lineTo(40, 40); g.lineTo(20, 40); g.closePath(); g.fillPath();
-  // Smile (small line in beard)
-  g.lineStyle(1.5, 0x6a4525, 1);
-  g.beginPath(); g.arc(30, 36, 6, 0.2, Math.PI - 0.2, false); g.strokePath();
-  // Hat/cap (red, on top)
-  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(10, 12, 40, 12, 4);
-  g.fillStyle(0xe74c3c, 1); g.fillRoundedRect(12, 12, 36, 5, 3);
-  // Cap brim (front)
-  g.fillStyle(0x7a1f15, 1); g.fillRect(28, 16, 22, 4);
-  // Ear hint
-  g.fillStyle(0xe0b886, 1); g.fillCircle(14, 32, 3);
-  g.fillStyle(0xe0b886, 1); g.fillCircle(46, 32, 3);
-  g.generateTexture('driver', 60, 60);
+  g.fillStyle(0x2a1808, 1);
+  g.beginPath(); g.arc(35, 42, 16, 0.2, Math.PI - 0.2, false); g.lineTo(48, 48); g.lineTo(22, 48); g.closePath(); g.fillPath();
+  // Beard texture
+  g.fillStyle(0x1a1004, 0.6); g.fillCircle(28, 44, 2); g.fillCircle(35, 46, 2); g.fillCircle(42, 44, 2);
+  // Nose
+  g.fillStyle(0xd8a878, 1); g.fillCircle(35, 39, 3);
+  // Mouth (small line in beard)
+  g.lineStyle(1.8, 0x5a3015, 1);
+  g.beginPath(); g.arc(35, 42, 7, 0.25, Math.PI - 0.25, false); g.strokePath();
+  // === Cap (red, on top) ===
+  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(8, 14, 54, 14, 5);
+  g.fillStyle(0xc0392b, 1); g.fillRoundedRect(10, 14, 50, 12, 4);
+  g.fillStyle(0xd43f31, 1); g.fillRoundedRect(12, 14, 46, 5, 3);
+  // Cap brim (front = right)
+  g.fillStyle(0x5a1812, 1); g.fillRoundedRect(32, 18, 30, 5, 2);
+  g.fillStyle(0x7a1f15, 1); g.fillRoundedRect(34, 18, 26, 3, 2);
+  // Cap logo (small white dot)
+  g.fillStyle(0xffffff, 0.9); g.fillCircle(28, 19, 2);
+  // Ears
+  g.fillStyle(0xe0b886, 1); g.fillCircle(15, 37, 4);
+  g.fillStyle(0xe0b886, 1); g.fillCircle(55, 37, 4);
+  g.fillStyle(0xc8a070, 0.6); g.fillCircle(15, 37, 2);
+  g.fillStyle(0xc8a070, 0.6); g.fillCircle(55, 37, 2);
+  g.generateTexture('driver', 70, 70);
   g.destroy();
 }
 
@@ -1086,19 +1158,17 @@ class OffroadScene extends Phaser.Scene {
     S.carSprite.setDepth(10);
 
     // Shadow under car (separate, follows car but no rotation)
-    S.carShadow = this.add.ellipse(startX, startY + 42, 160, 22, 0x000000, 0.32);
+    S.carShadow = this.add.ellipse(startX, startY + 46, 180, 24, 0x000000, 0.3);
     S.carShadow.setDepth(9);
 
-    // Body sprite: texture is 200x100, origin at center
-    // Chassis physics box is 120x32 centered at (0,0) — top at -16, bottom at +16
-    // We want texture's body-bottom (y=58 in tex = +8 from center) to sit at chassis bottom (y=+16)
-    // So image center y = 16 - (58-50) = 16 - 8 = 8 ... but we want body slightly above wheels
-    // Wheels at y=+22 with radius 28 — top of wheel at y=-6. Body bottom should be ~y=+10.
-    // Body bottom in texture is y=58 (tex), so image center = 10 - (58-50) = 10 - 8 = 2. Use 0.
+    // Body sprite: texture is 220x120, origin at center (110, 60)
+    // Chassis physics box is 120x32 centered at (0,0)
+    // We want body bottom (y=74 in tex) to align at y=+16 (chassis bottom)
+    // Image center y = 16 - (74-60) = 16 - 14 = 2. Use 0.
     const bodyImg = this.add.image(0, 0, 'carBody');
     bodyImg.setOrigin(0.5, 0.5);
-    // Driver head — sits in cabin window area (cabin y=8..28 in texture, center at 18; in container that's -32)
-    const driverHead = this.add.image(2, -32, 'driver');
+    // Driver head — sits in cabin window area (cabin y=8..38 in tex, center at 23; in container that's -37)
+    const driverHead = this.add.image(2, -37, 'driver');
     driverHead.setOrigin(0.5, 0.5);
     driverHead.setScale(0.55);
     S.driverSprite = driverHead;
@@ -1107,9 +1177,9 @@ class OffroadScene extends Phaser.Scene {
     // Wheels — procedural texture, sized to physics radius
     const wheelTexRadius = 40; // texture is 80x80
     const wheelScale = CFG.WHEEL_RADIUS / wheelTexRadius;
-    S.wheelBSprite = this.add.image(startX - 38, startY + 22, 'wheel');
+    S.wheelBSprite = this.add.image(startX - 40, startY + 22, 'wheel');
     S.wheelBSprite.setDepth(11); S.wheelBSprite.setScale(wheelScale);
-    S.wheelFSprite = this.add.image(startX + 38, startY + 22, 'wheel');
+    S.wheelFSprite = this.add.image(startX + 40, startY + 22, 'wheel');
     S.wheelFSprite.setDepth(11); S.wheelFSprite.setScale(wheelScale);
 
     // === Particles ===
@@ -1160,12 +1230,6 @@ class OffroadScene extends Phaser.Scene {
     // Camera
     this.cameras.main.setZoom(CFG.CAM_ZOOM);
     this.cameras.main.setBackgroundColor('#1a1f3a');
-
-    // Vignette overlay
-    S.vignette = this.add.graphics();
-    S.vignette.setDepth(100);
-    S.vignette.setScrollFactor(0);
-    redrawVignette(this);
 
     this._setupInput();
 
@@ -1276,7 +1340,7 @@ class OffroadScene extends Phaser.Scene {
     const angVel = S.carBody.getAngularVelocity();
     S.driverTargetRot = Phaser.Math.Clamp(-angVel * 0.05, -0.6, 0.6);
     S.driverSprite.rotation = Phaser.Math.Linear(S.driverSprite.rotation, S.driverTargetRot, 0.18);
-    S.driverSprite.y = -32 + Math.sin(time * 0.006) * 1.8;
+    S.driverSprite.y = -37 + Math.sin(time * 0.006) * 1.8;
 
     // ===== Camera with shake =====
     const targetX = cp.x + CFG.CAM_OFFSET_X;
@@ -1437,22 +1501,8 @@ class OffroadScene extends Phaser.Scene {
 }
 
 function redrawVignette(scene) {
-  const g = S.vignette;
-  const w = scene.cameras.main.width;
-  const h = scene.cameras.main.height;
-  g.clear();
-  // Radial vignette (4 corner rectangles + soft edges)
-  const steps = 12;
-  for (let i = 0; i < steps; i++) {
-    const t = i / steps;
-    const alpha = Math.pow(t, 2) * 0.5;
-    const inset = t * 60;
-    g.fillStyle(0x000000, alpha / steps);
-    g.fillRect(0, 0, w, inset);
-    g.fillRect(0, h - inset, w, inset);
-    g.fillRect(0, 0, inset, h);
-    g.fillRect(w - inset, 0, inset, h);
-  }
+  // Removed — vignette was causing the transparent rectangle overlay
+  if (S.vignette) S.vignette.clear();
 }
 
 // ============================================================
