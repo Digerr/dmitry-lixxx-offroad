@@ -437,18 +437,18 @@ const CFG = {
   VEL_ITER: 12,
   POS_ITER: 6,
   CAR_W: 120, CAR_H: 30,
-  CAR_DENSITY: 0.0006,
+  CAR_DENSITY: 0.0025,
   WHEEL_RADIUS: 30,
-  WHEEL_DENSITY: 0.0009,
-  WHEEL_FRICTION: 6.0,
+  WHEEL_DENSITY: 0.0030,
+  WHEEL_FRICTION: 4.0,
   SUSPENSION_FREQ: 6.5,
   SUSPENSION_DAMP: 0.55,
-  MOTOR_SPEED: 26,
-  REVERSE_SPEED: -16,
-  MOTOR_TORQUE: 2200000,
+  MOTOR_SPEED: 22,
+  REVERSE_SPEED: -14,
+  MOTOR_TORQUE: 900000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
-  TERRAIN_INITIAL_FLAT: 12,
+  TERRAIN_INITIAL_FLAT: 14,
   FUEL_MAX: 100,
   FUEL_DRAIN_IDLE: 0.9,
   FUEL_DRAIN_GAS: 2.8,
@@ -654,7 +654,7 @@ function createCar(scene, world, x, y) {
   carBody.setBullet(true);
   carBody.setFixedRotation(false);
   // Lower center of mass significantly — very stable, hard to flip
-  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 14), I: carBody.getInertia()};
+  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 18), I: carBody.getInertia() * 1.8};
   carBody.setMassData(massData);
 
   const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 40, y + 22)});
@@ -1210,8 +1210,8 @@ class OffroadScene extends Phaser.Scene {
     extendTerrain(this, this.physicsWorld, 80);
     redrawTerrain(this);
 
-    // Car
-    const startX = 140, startY = CFG.TERRAIN_BASE_Y - 95;
+    // Car — spawn with wheels touching ground to avoid drop-flip
+    const startX = 140, startY = CFG.TERRAIN_BASE_Y - 100;
     const car = createCar(this, this.physicsWorld, startX, startY);
     S.carBody = car.carBody;
     S.wheelBack = car.wheelBack;
@@ -1413,20 +1413,20 @@ class OffroadScene extends Phaser.Scene {
     if (tiltAngle > Math.PI) tiltAngle -= Math.PI * 2;
     // In y-down: angle < 0 = nose up (leaning back), > 0 = nose down
     const noseUpAngle = -tiltAngle; // positive when nose up
-    // Apply counter-torque when nose is up beyond 22 deg (=0.38 rad) — earlier intervention
-    if (noseUpAngle > 0.38) {
+    // Apply counter-torque when nose is up beyond 25 deg (=0.44 rad) — gentle but firm
+    if (noseUpAngle > 0.44) {
       const angVel = S.carBody.getAngularVelocity();
       if (angVel < 0) { // rotating CCW = nose going up further
-        // Strong restoring torque proportional to over-tilt and angular velocity
-        const correction = Math.min(4000, (noseUpAngle - 0.38) * 4000 + Math.abs(angVel) * 600);
+        // Gentle restoring — proportional to over-tilt only, capped
+        const correction = Math.min(450, (noseUpAngle - 0.44) * 700 + Math.abs(angVel) * 80);
         S.carBody.applyAngularImpulse(-correction * dt, true);
       }
     }
     // Also help recover when nose is way down (going downhill, about to flip forward)
-    if (noseUpAngle < -0.55) {
+    if (noseUpAngle < -0.65) {
       const angVel = S.carBody.getAngularVelocity();
       if (angVel > 0) {
-        const correction = Math.min(4000, (-noseUpAngle - 0.55) * 4000 + Math.abs(angVel) * 600);
+        const correction = Math.min(450, (-noseUpAngle - 0.65) * 700 + Math.abs(angVel) * 80);
         S.carBody.applyAngularImpulse(correction * dt, true);
       }
     }
