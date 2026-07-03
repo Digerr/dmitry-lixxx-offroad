@@ -440,12 +440,12 @@ const CFG = {
   CAR_DENSITY: 0.0025,
   WHEEL_RADIUS: 30,
   WHEEL_DENSITY: 0.0030,
-  WHEEL_FRICTION: 3.5,
+  WHEEL_FRICTION: 3.0,
   SUSPENSION_FREQ: 6.5,
   SUSPENSION_DAMP: 0.55,
-  MOTOR_SPEED: 22,
-  REVERSE_SPEED: -14,
-  MOTOR_TORQUE: 1200000,
+  MOTOR_SPEED: 18,
+  REVERSE_SPEED: -12,
+  MOTOR_TORQUE: 3000000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
   TERRAIN_INITIAL_FLAT: 14,
@@ -567,14 +567,14 @@ function generateTerrainPoint(i) {
   if (i < CFG.TERRAIN_INITIAL_FLAT) return CFG.TERRAIN_BASE_Y;
   const x = i * CFG.TERRAIN_STEP;
   let y = CFG.TERRAIN_BASE_Y;
-  // Gentle rolling hills — HCR-style but climbable
-  y += Math.sin(x * 0.005) * 42;
-  y += Math.sin(x * 0.013) * 22;
-  y += Math.sin(x * 0.029) * 11;
-  y += Math.sin(x * 0.061) * 5;
+  // Very gentle rolling hills — HCR-style but always climbable
+  y += Math.sin(x * 0.005) * 32;
+  y += Math.sin(x * 0.013) * 17;
+  y += Math.sin(x * 0.029) * 8;
+  y += Math.sin(x * 0.061) * 4;
   y += Math.sin(x * 0.13) * 2;
-  if (x > 4000) y += Math.sin(x * 0.008) * (Math.min(40, (x - 4000) * 0.02));
-  if (x > 8000) y += Math.sin(x * 0.011) * 32;
+  if (x > 4000) y += Math.sin(x * 0.008) * (Math.min(30, (x - 4000) * 0.02));
+  if (x > 8000) y += Math.sin(x * 0.011) * 25;
   return y;
 }
 
@@ -653,8 +653,8 @@ function createCar(scene, world, x, y) {
   });
   carBody.setBullet(true);
   carBody.setFixedRotation(false);
-  // Lower center of mass significantly — very stable, hard to flip
-  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 18), I: carBody.getInertia() * 1.8};
+  // Lower center of mass + very high rotational inertia = very stable, hard to flip
+  const massData = {mass: carBody.getMass(), center: planck.Vec2(0, 20), I: carBody.getInertia() * 3.0};
   carBody.setMassData(massData);
 
   const wheelBack = world.createDynamicBody({position: planck.Vec2(x - 40, y + 22)});
@@ -1432,9 +1432,9 @@ class OffroadScene extends Phaser.Scene {
     }
 
     // ===== Auto-cut gas on extreme nose-up (HCR-style — driver backs off) =====
-    // If nose is more than 38° up AND gas is pressed, cut motor to prevent flip
-    const gasEffective = gasPressed && noseUpAngle < 0.66;
-    if (!gasEffective && gasPressed && noseUpAngle >= 0.66) {
+    // If nose is more than 32° up AND gas is pressed, cut motor to prevent flip
+    const gasEffective = gasPressed && noseUpAngle < 0.56;
+    if (!gasEffective && gasPressed && noseUpAngle >= 0.56) {
       // Temporarily disable motor to let front end drop
       S.wheelJointBack.enableMotor(false);
       S.wheelJointFront.enableMotor(false);
