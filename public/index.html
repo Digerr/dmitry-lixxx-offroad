@@ -440,12 +440,12 @@ const CFG = {
   CAR_DENSITY: 0.0025,
   WHEEL_RADIUS: 30,
   WHEEL_DENSITY: 0.0030,
-  WHEEL_FRICTION: 4.0,
+  WHEEL_FRICTION: 3.5,
   SUSPENSION_FREQ: 6.5,
   SUSPENSION_DAMP: 0.55,
   MOTOR_SPEED: 22,
   REVERSE_SPEED: -14,
-  MOTOR_TORQUE: 900000,
+  MOTOR_TORQUE: 1200000,
   TERRAIN_STEP: 28,
   TERRAIN_BASE_Y: 560,
   TERRAIN_INITIAL_FLAT: 14,
@@ -567,14 +567,14 @@ function generateTerrainPoint(i) {
   if (i < CFG.TERRAIN_INITIAL_FLAT) return CFG.TERRAIN_BASE_Y;
   const x = i * CFG.TERRAIN_STEP;
   let y = CFG.TERRAIN_BASE_Y;
-  // Gentler hills — HCR-style rolling terrain, not too steep
-  y += Math.sin(x * 0.005) * 55;
-  y += Math.sin(x * 0.013) * 28;
-  y += Math.sin(x * 0.029) * 14;
-  y += Math.sin(x * 0.061) * 7;
-  y += Math.sin(x * 0.13) * 3;
-  if (x > 4000) y += Math.sin(x * 0.008) * (Math.min(50, (x - 4000) * 0.02));
-  if (x > 8000) y += Math.sin(x * 0.011) * 40;
+  // Gentle rolling hills — HCR-style but climbable
+  y += Math.sin(x * 0.005) * 42;
+  y += Math.sin(x * 0.013) * 22;
+  y += Math.sin(x * 0.029) * 11;
+  y += Math.sin(x * 0.061) * 5;
+  y += Math.sin(x * 0.13) * 2;
+  if (x > 4000) y += Math.sin(x * 0.008) * (Math.min(40, (x - 4000) * 0.02));
+  if (x > 8000) y += Math.sin(x * 0.011) * 32;
   return y;
 }
 
@@ -1413,12 +1413,12 @@ class OffroadScene extends Phaser.Scene {
     if (tiltAngle > Math.PI) tiltAngle -= Math.PI * 2;
     // In y-down: angle < 0 = nose up (leaning back), > 0 = nose down
     const noseUpAngle = -tiltAngle; // positive when nose up
-    // Apply counter-torque when nose is up beyond 25 deg (=0.44 rad) — gentle but firm
+    // Strong anti-flip once nose is up beyond 25 deg (=0.44 rad)
     if (noseUpAngle > 0.44) {
       const angVel = S.carBody.getAngularVelocity();
       if (angVel < 0) { // rotating CCW = nose going up further
-        // Gentle restoring — proportional to over-tilt only, capped
-        const correction = Math.min(450, (noseUpAngle - 0.44) * 700 + Math.abs(angVel) * 80);
+        // Strong restoring — proportional to over-tilt and angular velocity
+        const correction = Math.min(3500, (noseUpAngle - 0.44) * 2500 + Math.abs(angVel) * 400);
         S.carBody.applyAngularImpulse(-correction * dt, true);
       }
     }
@@ -1426,9 +1426,18 @@ class OffroadScene extends Phaser.Scene {
     if (noseUpAngle < -0.65) {
       const angVel = S.carBody.getAngularVelocity();
       if (angVel > 0) {
-        const correction = Math.min(450, (-noseUpAngle - 0.65) * 700 + Math.abs(angVel) * 80);
+        const correction = Math.min(3500, (-noseUpAngle - 0.65) * 2500 + Math.abs(angVel) * 400);
         S.carBody.applyAngularImpulse(correction * dt, true);
       }
+    }
+
+    // ===== Auto-cut gas on extreme nose-up (HCR-style — driver backs off) =====
+    // If nose is more than 38° up AND gas is pressed, cut motor to prevent flip
+    const gasEffective = gasPressed && noseUpAngle < 0.66;
+    if (!gasEffective && gasPressed && noseUpAngle >= 0.66) {
+      // Temporarily disable motor to let front end drop
+      S.wheelJointBack.enableMotor(false);
+      S.wheelJointFront.enableMotor(false);
     }
 
     S.carSprite.x = cp.x;
