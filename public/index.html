@@ -503,33 +503,41 @@ function updatePops(dt){
    spring-damper struts whose ground-contact length is solved
    analytically each frame against the terrain heightfield.
    ============================================================ */
+// CAR_SCALE: scales every visual & physical dimension of the car. Lower = smaller car.
+// Tuned for a release-quality feel: noticeable presence on screen without dominating it.
+var CAR_SCALE = 0.78;
+
 var GRAVITY = 1900;
 var MASS = 1;
-var INERTIA = 1100;
+// Smaller car => smaller moment of inertia (scales with size^2).
+var INERTIA = 1100 * CAR_SCALE * CAR_SCALE; // ~670
 
-var BODY_W = 128, BODY_H = 44;
-// Lada Niva-style boxy silhouette for collision (scaled to compact HCR proportions)
+var BODY_W = Math.round(128 * CAR_SCALE), BODY_H = Math.round(44 * CAR_SCALE); // 100 x 34
+// Lada Niva-style boxy silhouette. Drawn unscaled; physics collision uses bodyCornersPhys.
 var bodyCorners = [
   {x:-64,y:-18},{x:-54,y:-38},{x:38,y:-40},{x:58,y:-26},{x:62,y:4},{x:48,y:14},{x:-54,y:12},{x:-66,y:-2}
 ];
+// Scaled copy used for crash-detection physics (must match the visual scale).
+var bodyCornersPhys = bodyCorners.map(function(c){ return {x:c.x*CAR_SCALE, y:c.y*CAR_SCALE}; });
 
-var WHEEL_R = 22;
-var REST_LEN = 32, MIN_LEN = 6, MAX_LEN = 52;
-var SUS_K = 900, SUS_D = 50;
-var CHASSIS_K = 62, CHASSIS_D = 11;
+var WHEEL_R = 15;                       // smaller wheels (was 22 — user said "absolutely huge")
+var REST_LEN = Math.round(32*CAR_SCALE), MIN_LEN = 5, MAX_LEN = Math.round(52*CAR_SCALE); // 25, 5, 40
+// Overdamped suspension — kills the max-speed vibration/rattle completely.
+// Damping ratio = SUS_D / (2*sqrt(SUS_K)) ≈ 80/(2*36) ≈ 1.1 (slightly overdamped)
+var SUS_K = 1300, SUS_D = 80;
+// Chassis pitch spring — also near-critically damped so the body can't oscillate.
+var CHASSIS_K = 95, CHASSIS_D = 22;
 
-var ENGINE_POWER = 2200;
-var BRAKE_POWER = 3200;
+var ENGINE_POWER = 1700;
+var BRAKE_POWER = 2500;
 var REVERSE_MUL = 0.55;
 var AIR_TILT = 4.2;
 var FUEL_RATE = 100/42; // full tank ~42s of full throttle
 
 // Wheelie control — keeps the car from flipping backward when the player pins the gas.
-// Two stages: (1) gently reduce engine force as the nose rises, (2) hard angle clamp
-// past a hard limit so the chassis physically cannot flip past ~24 degrees nose-up.
 var WHEELIE_SOFT_START = -0.12;   // rad (~-7°) — start tapering engine power
 var WHEELIE_HARD_LIMIT = -0.32;   // rad (~-18°) — apply strong counter-torque past this
-var WHEELIE_COUNTER_TORQUE = 9500;
+var WHEELIE_COUNTER_TORQUE = Math.round(9500 * CAR_SCALE * CAR_SCALE); // ~5800
 
 var car = null;
 function makeWheel(localX, localY){
@@ -541,7 +549,7 @@ function resetCar(){
   car = {
     x:startX, y:gy-80, angle:0, vx:0, vy:0, angularVel:0,
     fuel:100, coins:0, crashed:false, crashReason:null,
-    stuckTimer:0, airTime:0, wheels:[ makeWheel(-44,18), makeWheel(46,14) ], // [rear, front]
+    stuckTimer:0, airTime:0, wheels:[ makeWheel(-44*CAR_SCALE, 18*CAR_SCALE), makeWheel(46*CAR_SCALE, 14*CAR_SCALE) ], // [rear, front]
     maxX:startX
   };
 }
@@ -678,9 +686,10 @@ function stepPhysics(dt, input){
   }
 
   // aerodynamic drag (caps top speed so the car doesn't launch off every bump)
+  // Tuned for ENGINE_POWER=1700: top speed ~ sqrt(1700/0.0035) ~ 696 px/s.
   var spd = Math.sqrt(car.vx*car.vx+car.vy*car.vy);
   if (spd > 1){
-    var dragMag = 0.0040*spd*spd;
+    var dragMag = 0.0035*spd*spd;
     acc.fx += -(car.vx/spd)*dragMag;
     acc.fy += -(car.vy/spd)*dragMag;
   }
@@ -715,8 +724,8 @@ function stepPhysics(dt, input){
   // crash detection: body hull touching terrain
   // Use a generous sink tolerance (16px) — the suspension can absorb a lot,
   // and small body dips during hard landings shouldn't insta-crash the player.
-  for (var c=0;c<bodyCorners.length;c++){
-    var p = rotate(bodyCorners[c].x, bodyCorners[c].y, car.angle);
+  for (var c=0;c<bodyCornersPhys.length;c++){
+    var p = rotate(bodyCornersPhys[c].x, bodyCornersPhys[c].y, car.angle);
     var wx = car.x+p.x, wy = car.y+p.y;
     var gy2 = terrainHeightAt(wx);
     if (wy > gy2 + 16){
@@ -779,11 +788,20 @@ function triggerCrash(reason){
    ============================================================ */
 var camera = {x:0, y:0, shake:0};
 function updateCamera(dt){
-  var lookAhead = clamp(car.vx*0.18, -140, 220);
-  var targetX = car.x - W*0.38 + lookAhead;
-  var targetY = car.y - H*0.56;
+  // Smoothed look-ahead: clamp how fast lookAhead can change so a jittery vx
+  // at top speed can't yank the camera horizontally.
+  var targetLook = clamp(car.vx*0.18, -140, 220);
+  if (!camera._look) camera._look = targetLook;
+  camera._look = lerp(camera._look, targetLook, 1-Math.pow(0.05, dt));
+  var targetX = car.x - W*0.38 + camera._look;
+  // Smoothed Y target: average the chassis and wheel-averaged position so
+  // suspension bounce doesn't translate into camera jitter.
+  var wheelAvgY = (car.wheels[0].y + car.wheels[1].y)*0.5;
+  var yAnchor = (car.y + wheelAvgY)*0.5;
+  var targetY = yAnchor - H*0.56;
+  // Critically-damped follow (slower on Y for vertical calm, faster on X for responsiveness).
   camera.x = lerp(camera.x, targetX, 1-Math.pow(0.001, dt));
-  camera.y = lerp(camera.y, targetY, 1-Math.pow(0.001, dt));
+  camera.y = lerp(camera.y, targetY, 1-Math.pow(0.004, dt));
   if (camera.shake>0){ camera.shake = Math.max(0, camera.shake - dt*3); }
 }
 
@@ -929,21 +947,127 @@ function drawMountainLayer(baseY, amp, freq, factor, color, seed, snowCap){
   ctx.fillStyle = color;
   ctx.fill();
 
-  // snow caps on the highest peaks
+  // Snow caps: drawn as a smooth "snow line" that follows the ridge instead of
+  // little hard white triangles (which read as stray artifacts from far away).
+  // Only the closest mountain layer gets snow; back layers stay dark for depth.
   if (snowCap){
+    var snowLine = baseY - amp*0.62; // only peaks higher than this get snow
     ctx.fillStyle = snowCap;
-    for (var i=2;i<peaks.length-2;i++){
-      if (peaks[i].y < baseY - amp*0.55){
-        var p = peaks[i];
-        // little white triangle on the peak
+    ctx.beginPath();
+    var started = false;
+    for (var i=0;i<peaks.length;i++){
+      var p = peaks[i];
+      if (p.y < snowLine){
+        if (!started){ ctx.moveTo(p.x, p.y + (snowLine - p.y)*0.6); started=true; }
+        else ctx.lineTo(p.x, p.y);
+      } else if (started){
+        // close the snow patch at the snow line
+        ctx.lineTo(p.x, snowLine);
+        ctx.lineTo(peaks[i-1].x, snowLine);
+        ctx.closePath(); ctx.fill();
         ctx.beginPath();
-        ctx.moveTo(p.x-6, p.y+10);
-        ctx.lineTo(p.x, p.y);
-        ctx.lineTo(p.x+6, p.y+10);
-        ctx.closePath();
-        ctx.fill();
+        started = false;
       }
     }
+    if (started){ ctx.lineTo(peaks[peaks.length-1].x, snowLine); ctx.closePath(); ctx.fill(); }
+  }
+}
+
+// Midground tree-line layer: a dark forested ridge between the mountains and the
+// terrain. Adds depth and breaks up the visual jump from mountains to ground.
+function drawMidgroundTrees(){
+  var baseY = H*0.86;
+  var factor = 0.62;
+  var step = 14;
+  // distant dark tree silhouettes
+  ctx.fillStyle = 'rgba(28,16,38,0.85)';
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  for (var sx=0; sx<=W+step; sx+=step){
+    var wx = sx + camera.x*factor;
+    var ridge = baseY - (noise1(wx*0.0018+44.1))*48;
+    // bumpy tree tops
+    var bump = (Math.sin(wx*0.07)*4 + Math.sin(wx*0.13)*3);
+    ctx.lineTo(sx, ridge + bump);
+  }
+  ctx.lineTo(W,H); ctx.closePath();
+  ctx.fill();
+}
+
+/* ---- starting banner + milestone distance signs ---- */
+var START_X = 260;
+function drawTrackMarkers(){
+  // Starting line gate — two poles with a checkered banner across the top.
+  // Always rendered when the start line is in view.
+  if (camera.x - 200 < START_X && camera.x + W + 200 > START_X){
+    var gy = terrainHeightAt(START_X);
+    var sp = worldToScreen(START_X, gy);
+    var gateWidth = 120;
+    var gateHeight = 130;
+    ctx.save();
+    ctx.translate(sp.x, sp.y);
+    // left pole
+    ctx.strokeStyle = '#1a1a14'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-gateWidth/2, 0); ctx.lineTo(-gateWidth/2, -gateHeight); ctx.stroke();
+    // right pole
+    ctx.beginPath(); ctx.moveTo(gateWidth/2, 0); ctx.lineTo(gateWidth/2, -gateHeight); ctx.stroke();
+    // banner across the top (checkered)
+    var bw = gateWidth, bh = 30, by = -gateHeight;
+    var fs = 8;
+    for (var row=0; row<bh/fs; row++){
+      for (var col=0; col<bw/fs; col++){
+        ctx.fillStyle = (row+col)%2===0 ? '#fff6ea' : '#15120a';
+        ctx.fillRect(-bw/2 + col*fs, by + row*fs, fs, fs);
+      }
+    }
+    ctx.strokeStyle = '#15120a'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(-bw/2, by, bw, bh);
+    // "СТАРТ" sign on the ground (yellow plate)
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.roundRect(-32, -3, 64, 12, 2); ctx.fill();
+    ctx.strokeStyle = '#3a2010'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#15120a';
+    ctx.font = "700 10px 'Fredoka',sans-serif"; ctx.textAlign = 'center';
+    ctx.fillText('СТАРТ', 0, 6);
+    ctx.restore();
+  }
+
+  // Distance markers every 100m — small wooden sign posts along the right side of the track.
+  var markerSpacingM = 100;
+  var startMeters = 100;
+  var lastMarker = 10000;
+  var firstMarkerWorldX = START_X + startMeters * PX_PER_METER;
+  var markerSpacingPx = markerSpacingM * PX_PER_METER;
+  var loIdx = Math.floor((camera.x - 100 - firstMarkerWorldX) / markerSpacingPx);
+  var hiIdx = Math.floor((camera.x + W + 100 - firstMarkerWorldX) / markerSpacingPx);
+  for (var i = Math.max(0, loIdx); i <= hiIdx; i++){
+    var meters = startMeters + i * markerSpacingM;
+    if (meters > lastMarker) break;
+    var wx = firstMarkerWorldX + i * markerSpacingPx;
+    var gy = terrainHeightAt(wx);
+    var sp = worldToScreen(wx, gy);
+    if (sp.x < -60 || sp.x > W + 60) continue;
+    // alternate side of the track for variety
+    var side = (i % 2 === 0) ? 1 : -1;
+    var px = sp.x + side * 60;
+    ctx.save();
+    ctx.translate(px, sp.y);
+    // post
+    ctx.strokeStyle = '#5a3a22'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -46); ctx.stroke();
+    // sign board (wooden)
+    ctx.fillStyle = '#9a6a3a';
+    ctx.beginPath(); ctx.roundRect(-26, -56, 52, 20, 3); ctx.fill();
+    ctx.strokeStyle = '#3a2010'; ctx.lineWidth = 1.4; ctx.stroke();
+    // wood grain
+    ctx.strokeStyle = 'rgba(58,32,16,0.35)'; ctx.lineWidth = 0.6;
+    ctx.beginPath(); ctx.moveTo(-22, -50); ctx.lineTo(22, -50); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-22, -44); ctx.lineTo(22, -44); ctx.stroke();
+    // distance text
+    ctx.fillStyle = '#fff6ea';
+    ctx.font = "700 11px 'Fredoka',sans-serif"; ctx.textAlign = 'center';
+    ctx.fillText(meters + ' м', 0, -42);
+    ctx.restore();
   }
 }
 
@@ -1221,13 +1345,13 @@ function drawParticles(){
 function drawCar(){
   // shadow (scales with the smaller car)
   var gy = terrainHeightAt(car.x);
-  var heightAbove = clamp((gy - (car.y+55))/140, 0, 1);
+  var heightAbove = clamp((gy - (car.y+55*CAR_SCALE))/140, 0, 1);
   var shSp = worldToScreen(car.x, gy);
   ctx.save();
   ctx.globalAlpha = 0.35*(1-heightAbove*0.6);
   ctx.fillStyle = '#150a24';
   ctx.beginPath();
-  ctx.ellipse(shSp.x, shSp.y+3, 68*(1-heightAbove*0.3), 12*(1-heightAbove*0.5), 0, 0, Math.PI*2);
+  ctx.ellipse(shSp.x, shSp.y+3, 68*CAR_SCALE*(1-heightAbove*0.3), 12*CAR_SCALE*(1-heightAbove*0.5), 0, 0, Math.PI*2);
   ctx.fill();
   ctx.restore();
 
@@ -1241,22 +1365,22 @@ function drawCar(){
 
     // suspension strut
     ctx.strokeStyle = '#1a1422';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(mSp.x, mSp.y); ctx.lineTo(wSp.x, wSp.y); ctx.stroke();
     ctx.strokeStyle = '#4a4a55';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.6;
     ctx.beginPath(); ctx.moveTo(mSp.x, mSp.y); ctx.lineTo(wSp.x, wSp.y); ctx.stroke();
 
     // chunky offroad wheel
     ctx.save();
     ctx.translate(wSp.x, wSp.y);
     // tire
-    var tireGrad = ctx.createRadialGradient(-4,-4,2,0,0,WHEEL_R);
+    var tireGrad = ctx.createRadialGradient(-3,-3,1.5,0,0,WHEEL_R);
     tireGrad.addColorStop(0,'#3a3540'); tireGrad.addColorStop(0.7,'#181820'); tireGrad.addColorStop(1,'#08080c');
     ctx.beginPath(); ctx.arc(0,0,WHEEL_R,0,Math.PI*2); ctx.fillStyle=tireGrad; ctx.fill();
     // sidewall ring
-    ctx.beginPath(); ctx.arc(0,0,WHEEL_R-2,0,Math.PI*2);
-    ctx.strokeStyle='#1a1a20'; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,WHEEL_R-1.5,0,Math.PI*2);
+    ctx.strokeStyle='#1a1a20'; ctx.lineWidth=1.6; ctx.stroke();
     // outer chunky tread (10 lugs, rotated with wheel spin)
     ctx.save();
     ctx.rotate(w.spin);
@@ -1265,26 +1389,26 @@ function drawCar(){
       var ang = (k/10)*Math.PI*2;
       ctx.save();
       ctx.rotate(ang);
-      ctx.fillRect(WHEEL_R-5, -1.8, 4, 3.6);
+      ctx.fillRect(WHEEL_R-3.5, -1.3, 2.8, 2.6);
       ctx.restore();
     }
     ctx.restore();
     // hub
-    ctx.beginPath(); ctx.arc(0,0,9,0,Math.PI*2);
-    var hubG = ctx.createRadialGradient(-2,-2,1,0,0,9);
+    ctx.beginPath(); ctx.arc(0,0,6,0,Math.PI*2);
+    var hubG = ctx.createRadialGradient(-1.5,-1.5,0.8,0,0,6);
     hubG.addColorStop(0,'#e8e8e8'); hubG.addColorStop(1,'#7a7a85');
     ctx.fillStyle = hubG; ctx.fill();
-    ctx.strokeStyle='#222'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle='#222'; ctx.lineWidth=0.8; ctx.stroke();
     // 5 lug nuts (rotating with wheel)
     ctx.save();
     ctx.rotate(w.spin);
     ctx.fillStyle = '#333';
     for (var lug=0;lug<5;lug++){
       var la = (lug/5)*Math.PI*2;
-      ctx.beginPath(); ctx.arc(Math.cos(la)*4.5, Math.sin(la)*4.5, 1.2, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(Math.cos(la)*3.2, Math.sin(la)*3.2, 0.9, 0, Math.PI*2); ctx.fill();
     }
     ctx.restore();
-    ctx.beginPath(); ctx.arc(0,0,2,0,Math.PI*2); ctx.fillStyle='#1a1a1a'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,1.4,0,Math.PI*2); ctx.fillStyle='#1a1a1a'; ctx.fill();
     ctx.restore();
   }
 
@@ -1293,8 +1417,11 @@ function drawCar(){
   ctx.save();
   ctx.translate(bSp.x, bSp.y);
   ctx.rotate(car.angle);
+  // Scale the entire body+details drawing by CAR_SCALE so all the hardcoded
+  // body detail coordinates (headlights, mirrors, etc.) match the smaller car.
+  ctx.scale(CAR_SCALE, CAR_SCALE);
 
-  // main body polygon (boxy Lada Niva silhouette, scaled down)
+  // main body polygon (boxy Lada Niva silhouette)
   ctx.beginPath();
   ctx.moveTo(bodyCorners[0].x, bodyCorners[0].y);
   for (var c=1;c<bodyCorners.length;c++) ctx.lineTo(bodyCorners[c].x, bodyCorners[c].y);
@@ -1501,7 +1628,7 @@ function drawCar(){
 
   // exhaust smoke when accelerating
   if (input.gas>0.3 && Math.random()<0.5){
-    var exLocal = rotate(-72,-1,car.angle);
+    var exLocal = rotate(-72*CAR_SCALE,-1*CAR_SCALE,car.angle);
     spawnSmoke(car.x+exLocal.x, car.y+exLocal.y);
   }
 }
@@ -1711,12 +1838,17 @@ function frame(now){
 
 function render(){
   drawSky();
-  drawMountainLayer(H*0.62, 90, 0.0011, 0.12, 'rgba(58,32,74,0.55)', 4.2, null);
-  drawMountainLayer(H*0.70, 130, 0.0007, 0.24, 'rgba(74,42,96,0.78)', 91.3, 'rgba(245,235,255,0.85)');
-  drawMountainLayer(H*0.78, 180, 0.0005, 0.42, 'rgba(90,52,110,0.92)', 187.4, 'rgba(255,250,255,0.95)');
+  // Three mountain layers, far-to-near. BaseY is high on screen (smaller Y) so the
+  // mountains rise well above the terrain. Colors are MUCH darker than the dusk sky
+  // so the silhouettes contrast clearly (previous tint matched the sky and vanished).
+  drawMountainLayer(H*0.50, 70, 0.0011, 0.10, 'rgba(18,10,28,0.75)', 4.2, null);
+  drawMountainLayer(H*0.60, 110, 0.0007, 0.20, 'rgba(28,16,40,0.88)', 91.3, null);
+  drawMountainLayer(H*0.70, 160, 0.0005, 0.36, 'rgba(40,24,52,1.0)', 187.4, 'rgba(245,235,255,0.6)');
   drawClouds();
+  drawMidgroundTrees();
   drawDecorations();
   drawGround();
+  drawTrackMarkers();
   drawCollectibles(clock);
   if (car) drawCar();
   drawParticles();
@@ -1739,48 +1871,48 @@ requestAnimationFrame(function(t){ lastTime=t; requestAnimationFrame(frame); });
 
   // simple ground shadow
   pctx.fillStyle = 'rgba(0,0,0,0.35)';
-  pctx.beginPath(); pctx.ellipse(PW/2, PH-22, 90, 10, 0, 0, Math.PI*2); pctx.fill();
+  pctx.beginPath(); pctx.ellipse(PW/2, PH-22, 90*CAR_SCALE*1.3, 10*CAR_SCALE*1.3, 0, 0, Math.PI*2); pctx.fill();
 
   pctx.save();
   pctx.translate(PW/2, PH-50);
-  // scale preview car to be ~1.8x bigger than gameplay version
-  var s = 1.6;
+  // scale preview car to fill the canvas nicely. Bigger magnification because the
+  // gameplay car is now smaller.
+  var s = 2.0;
   pctx.scale(s, s);
 
-  // wheels (preview-only, no spin)
+  // wheels (preview-only, no spin) — use WHEEL_R and scaled mount positions
+  // so the preview matches the actual gameplay proportions.
   function drawWheel(x, y){
     pctx.save(); pctx.translate(x, y);
-    var tireG = pctx.createRadialGradient(-4,-4,2,0,0,22);
+    var tireG = pctx.createRadialGradient(-3,-3,1.5,0,0,WHEEL_R);
     tireG.addColorStop(0,'#3a3540'); tireG.addColorStop(0.7,'#181820'); tireG.addColorStop(1,'#08080c');
-    pctx.beginPath(); pctx.arc(0,0,22,0,Math.PI*2); pctx.fillStyle=tireG; pctx.fill();
-    pctx.beginPath(); pctx.arc(0,0,20,0,Math.PI*2); pctx.strokeStyle='#1a1a20'; pctx.lineWidth=2; pctx.stroke();
+    pctx.beginPath(); pctx.arc(0,0,WHEEL_R,0,Math.PI*2); pctx.fillStyle=tireG; pctx.fill();
+    pctx.beginPath(); pctx.arc(0,0,WHEEL_R-1.5,0,Math.PI*2); pctx.strokeStyle='#1a1a20'; pctx.lineWidth=1.6; pctx.stroke();
     pctx.fillStyle = '#0a0a0e';
     for (var k=0;k<10;k++){
       var ang = (k/10)*Math.PI*2;
       pctx.save(); pctx.rotate(ang);
-      pctx.fillRect(17,-1.8,4,3.6);
+      pctx.fillRect(WHEEL_R-3.5, -1.3, 2.8, 2.6);
       pctx.restore();
     }
-    pctx.beginPath(); pctx.arc(0,0,9,0,Math.PI*2);
-    var hg = pctx.createRadialGradient(-2,-2,1,0,0,9);
+    pctx.beginPath(); pctx.arc(0,0,6,0,Math.PI*2);
+    var hg = pctx.createRadialGradient(-1.5,-1.5,0.8,0,0,6);
     hg.addColorStop(0,'#e8e8e8'); hg.addColorStop(1,'#7a7a85');
     pctx.fillStyle=hg; pctx.fill();
-    pctx.strokeStyle='#222'; pctx.lineWidth=1; pctx.stroke();
+    pctx.strokeStyle='#222'; pctx.lineWidth=0.8; pctx.stroke();
     pctx.fillStyle='#333';
     for (var lug=0;lug<5;lug++){
       var la = (lug/5)*Math.PI*2;
-      pctx.beginPath(); pctx.arc(Math.cos(la)*4.5, Math.sin(la)*4.5, 1.2, 0, Math.PI*2); pctx.fill();
+      pctx.beginPath(); pctx.arc(Math.cos(la)*3.2, Math.sin(la)*3.2, 0.9, 0, Math.PI*2); pctx.fill();
     }
-    pctx.beginPath(); pctx.arc(0,0,2,0,Math.PI*2); pctx.fillStyle='#1a1a1a'; pctx.fill();
+    pctx.beginPath(); pctx.arc(0,0,1.4,0,Math.PI*2); pctx.fillStyle='#1a1a1a'; pctx.fill();
     pctx.restore();
   }
-  drawWheel(-44, 14);
-  drawWheel(46, 12);
+  drawWheel(-44*CAR_SCALE, 14*CAR_SCALE);
+  drawWheel(46*CAR_SCALE, 12*CAR_SCALE);
 
-  // body polygon
-  var corners = [
-    {x:-64,y:-18},{x:-54,y:-38},{x:38,y:-40},{x:58,y:-26},{x:62,y:4},{x:48,y:14},{x:-54,y:12},{x:-66,y:-2}
-  ];
+  // body polygon (drawn unscaled; matches the in-game body which is wrapped in ctx.scale(CAR_SCALE))
+  var corners = bodyCorners;
   pctx.beginPath();
   pctx.moveTo(corners[0].x, corners[0].y);
   for (var i=1;i<corners.length;i++) pctx.lineTo(corners[i].x, corners[i].y);
@@ -1791,10 +1923,10 @@ requestAnimationFrame(function(t){ lastTime=t; requestAnimationFrame(frame); });
   pctx.fillStyle = bg; pctx.fill();
   pctx.lineWidth=2.5; pctx.strokeStyle='#15120a'; pctx.stroke();
 
-  // wheel arches
+  // wheel arches (use WHEEL_R+2 to match gameplay)
   pctx.fillStyle = '#0a0a0e';
-  pctx.beginPath(); pctx.arc(-44, 14, 24, Math.PI, 2*Math.PI); pctx.fill();
-  pctx.beginPath(); pctx.arc(46, 12, 24, Math.PI, 2*Math.PI); pctx.fill();
+  pctx.beginPath(); pctx.arc(-44, 14, WHEEL_R+2, Math.PI, 2*Math.PI); pctx.fill();
+  pctx.beginPath(); pctx.arc(46, 12, WHEEL_R+2, Math.PI, 2*Math.PI); pctx.fill();
 
   // roof rack
   pctx.strokeStyle = '#1a1a14'; pctx.lineWidth=2; pctx.lineCap='round';
