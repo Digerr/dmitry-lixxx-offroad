@@ -10,51 +10,52 @@
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;overflow:hidden;background:#0b1026;color:#fff;font-family:-apple-system,Segoe UI,Roboto,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;}
   #game{position:fixed;inset:0;}
-  #hud,.pedal,#pauseBtn{display:none;}
+  /* HUD + pedals — только во время игры */
+  #hud,.pedal{display:none;}
   body.playing #hud{display:flex;}
   body.playing .pedal{display:flex;}
-  body.playing #pauseBtn{display:flex;}
   #hud{position:fixed;top:0;left:0;right:0;padding:10px 14px;justify-content:space-between;align-items:flex-start;text-shadow:0 1px 3px #000;pointer-events:none;font-weight:600;font-size:14px;z-index:5;}
   #hud .col{display:flex;flex-direction:column;gap:6px;}
   #fuelbar{width:120px;height:10px;border-radius:6px;background:rgba(255,255,255,.25);overflow:hidden;}
   #fuelfill{height:100%;width:100%;background:linear-gradient(90deg,#ff5f6d,#ffc371);transition:width .15s;}
   #speedbox{padding:4px 10px;border-radius:10px;background:rgba(0,0,0,.35);}
   #speedbox.ok{background:rgba(46,204,113,.6);}
-  #pauseBtn{position:fixed;top:10px;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.4);align-items:center;justify-content:center;font-size:20px;z-index:7;pointer-events:auto;border:none;color:#fff;}
   .pedal{position:fixed;bottom:0;width:50%;height:36%;z-index:6;align-items:center;justify-content:center;font-size:44px;color:rgba(255,255,255,.85);}
   #brake{left:0;background:linear-gradient(0deg,rgba(231,76,60,.30),transparent);}
   #gas{right:0;background:linear-gradient(0deg,rgba(46,204,113,.30),transparent);}
   .pedal:active{filter:brightness(1.4);}
   .screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:22px;}
   .hidden{display:none!important;}
+  /* boot */
   #boot{background:#0b1026;}
   .logo{font-size:34px;font-weight:800;letter-spacing:2px;background:linear-gradient(90deg,#ffc371,#ff9f43);-webkit-background-clip:text;background-clip:text;color:transparent;}
   #bootbar{width:200px;height:8px;border-radius:6px;background:rgba(255,255,255,.15);overflow:hidden;}
   #bootfill{height:100%;width:0%;background:linear-gradient(90deg,#ffc371,#ff9f43);transition:width .2s;}
+  /* menu */
   #menu{background:rgba(6,10,25,.55);backdrop-filter:blur(2px);justify-content:space-between;padding:26px 18px;}
   #menu .top{display:flex;flex-direction:column;align-items:center;gap:6px;}
   #best{opacity:.85;font-size:14px;}
-  .carcard{width:100%;max-width:360px;background:rgba(0,0,0,.35);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .carcard{width:100%;max-width:340px;background:rgba(0,0,0,.35);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;}
   .carrow{display:flex;align-items:center;justify-content:space-between;}
   .arrow{width:46px;height:46px;border-radius:50%;border:none;background:rgba(255,255,255,.14);color:#fff;font-size:22px;}
   .carprev{display:flex;flex-direction:column;align-items:center;gap:4px;}
-  #carCanvas{width:150px;height:84px;}
+  .caremoji{font-size:56px;line-height:1;}
   .carname{font-weight:700;font-size:18px;}
   .stats{display:flex;flex-direction:column;gap:6px;}
   .stat{display:flex;align-items:center;gap:8px;font-size:12px;}
-  .stat .lbl{width:74px;opacity:.8;text-align:left;}
+  .stat .lbl{width:64px;opacity:.8;text-align:left;}
   .bar{flex:1;height:8px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;}
   .bar i{display:block;height:100%;background:linear-gradient(90deg,#4facfe,#43e97b);}
-  .biomes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:380px;}
-  .chip{padding:8px 12px;border-radius:20px;background:rgba(255,255,255,.12);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid transparent;min-width:70px;}
+  .biomes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:360px;}
+  .chip{padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.12);font-size:13px;display:flex;align-items:center;gap:7px;border:2px solid transparent;}
   .chip.sel{border-color:#ffc371;background:rgba(255,159,67,.22);}
-  .chip .wx{font-size:10px;opacity:.7;}
   .dot{width:12px;height:12px;border-radius:50%;}
   .btn{padding:15px 46px;border:none;border-radius:16px;font-size:19px;font-weight:800;color:#0b1026;background:linear-gradient(90deg,#ffc371,#ff9f43);box-shadow:0 8px 24px rgba(255,159,67,.4);}
   .btn.ghost{background:rgba(255,255,255,.16);color:#fff;box-shadow:none;font-weight:700;}
+  /* countdown */
   #count{background:transparent;pointer-events:none;}
   #countnum{font-size:96px;font-weight:900;text-shadow:0 4px 20px rgba(0,0,0,.6);}
-  #pause{background:rgba(6,10,25,.75);}
+  /* over */
   #over{background:rgba(6,10,25,.82);}
   #over h1{font-size:30px;margin:0;}
   #over p{opacity:.85;max-width:300px;line-height:1.5;margin:0;}
@@ -75,7 +76,6 @@
     <div style="opacity:.7">цель: <span id="optspd">0</span></div>
   </div>
 </div>
-<button id="pauseBtn">⏸</button>
 <div id="brake" class="pedal">◀</div>
 <div id="gas" class="pedal">▶</div>
 
@@ -94,7 +94,7 @@
     <div class="carrow">
       <button class="arrow" id="prevCar">‹</button>
       <div class="carprev">
-        <canvas id="carCanvas" width="150" height="84"></canvas>
+        <div class="caremoji" id="carEmoji">🚙</div>
         <div class="carname" id="carName">Jeep 4x4</div>
       </div>
       <button class="arrow" id="nextCar">›</button>
@@ -107,14 +107,6 @@
 
 <div id="count" class="screen hidden"><div id="countnum">3</div></div>
 
-<div id="pause" class="screen hidden">
-  <h1>Пауза</h1>
-  <div class="rowbtns">
-    <button class="btn ghost" id="pMenuBtn">В меню</button>
-    <button class="btn" id="resumeBtn">Продолжить</button>
-  </div>
-</div>
-
 <div id="over" class="screen hidden">
   <h1 id="overTitle">ФИНИШ</h1>
   <p id="overText"></p>
@@ -126,71 +118,53 @@
 
 <script>
 const Matter = Phaser.Physics.Matter.Matter;
-const STEP=60, COUNT=820;
+const STEP=60, COUNT=760;
 
-/* ---------- МАШИНЫ (физика + внешний вид) ---------- */
 const CARS=[
-  {id:'jeep', name:'Jeep 4x4', color:0x2e86de, roof:0x1e5fa0, glass:0xbfe6ff,
-   torque:0.030, maxW:0.60, density:0.0044, grip:0.98, susp:0.68, damp:0.08, fuelUse:6, wheel:28, frontDrive:0.5,
-   bw:118, bh:30, cab:{x:-2,w:60,h:24},
-   stats:{Мощность:3,Скорость:3,Сцепление:4,Топливо:3}},
-  {id:'sport', name:'Sport GT', color:0xe74c3c, roof:0xb83227, glass:0xffd6c8,
-   torque:0.034, maxW:0.74, density:0.0038, grip:0.82, susp:0.50, damp:0.06, fuelUse:7, wheel:22, frontDrive:0.15,
-   bw:134, bh:22, cab:{x:-8,w:52,h:16},
-   stats:{Мощность:4,Скорость:5,Сцепление:2,Топливо:2}},
-  {id:'monster', name:'Monster', color:0x27ae60, roof:0x1e8449, glass:0xcaf7d8,
-   torque:0.036, maxW:0.56, density:0.0062, grip:1.10, susp:0.82, damp:0.10, fuelUse:8, wheel:36, frontDrive:0.6,
-   bw:112, bh:34, cab:{x:0,w:58,h:26},
-   stats:{Мощность:5,Скорость:2,Сцепление:5,Топливо:1}},
-  {id:'eco', name:'Eco Buggy', color:0xf39c12, roof:0xc87f0a, glass:0xffe9b8,
-   torque:0.028, maxW:0.60, density:0.0040, grip:0.92, susp:0.60, damp:0.08, fuelUse:4, wheel:26, frontDrive:0.4,
-   bw:110, bh:28, cab:{x:-2,w:54,h:22},
-   stats:{Мощность:2,Скорость:3,Сцепление:3,Топливо:5}}
+  {name:'Jeep 4x4', emoji:'🚙', color:0x2e86de, torque:0.030, maxW:0.60, density:0.0044, grip:0.98, susp:0.68, damp:0.08, fuelUse:6, wheel:28, frontDrive:0.5, stats:{Мощность:3,Скорость:3,Сцепление:4,Топливо:3}},
+  {name:'Sport GT', emoji:'🏎️', color:0xe74c3c, torque:0.034, maxW:0.74, density:0.0038, grip:0.82, susp:0.50, damp:0.06, fuelUse:7, wheel:24, frontDrive:0.15, stats:{Мощность:4,Скорость:5,Сцепление:2,Топливо:2}},
+  {name:'Monster', emoji:'🚜', color:0x27ae60, torque:0.036, maxW:0.56, density:0.0062, grip:1.10, susp:0.82, damp:0.10, fuelUse:8, wheel:34, frontDrive:0.6, stats:{Мощность:5,Скорость:2,Сцепление:5,Топливо:1}},
+  {name:'Eco Buggy', emoji:'🚗', color:0xf39c12, torque:0.028, maxW:0.60, density:0.0040, grip:0.92, susp:0.60, damp:0.08, fuelUse:4, wheel:26, frontDrive:0.4, stats:{Мощность:2,Скорость:3,Сцепление:3,Топливо:5}}
 ];
-
-/* ---------- БИОМЫ (рельеф + физика + погода) ---------- */
 const BIOMES=[
-  {name:'Луга',    dot:'#4caf50', bgTop:'#7ec8ff', bgBot:'#dff6ff', ground:0x6b4a2b, grass:0x4caf50, gravity:1.15, ascend:0.34, amp:290, friction:1.00, sky:'day',   rough:0.9, roughAmp:16, weather:'clear', wxName:'ясно'},
-  {name:'Пустыня', dot:'#e0a458', bgTop:'#ffb36b', bgBot:'#ffe6b3', ground:0xc2853f, grass:0xe0a458, gravity:1.12, ascend:0.31, amp:250, friction:0.82, sky:'day',   rough:0.28,roughAmp:60, weather:'sand',  wxName:'песок'},
-  {name:'Снега',   dot:'#cfe8ff', bgTop:'#bcd4e6', bgBot:'#f5fbff', ground:0x8fa6b5, grass:0xffffff, gravity:1.15, ascend:0.29, amp:230, friction:0.58, sky:'day',   rough:0.12,roughAmp:20, weather:'snow',  wxName:'снег'},
-  {name:'Каньон',  dot:'#c0392b', bgTop:'#7b2d3a', bgBot:'#e0794b', ground:0x8c3b2b, grass:0xcf5c3a, gravity:1.20, ascend:0.40, amp:360, friction:1.00, sky:'dusk',  rough:1.1, roughAmp:38, weather:'rain',  wxName:'дождь'},
-  {name:'Космос',  dot:'#8e7dff', bgTop:'#0a0a2a', bgBot:'#241b4d', ground:0x3a2d5c, grass:0x8e7dff, gravity:0.70, ascend:0.42, amp:420, friction:0.90, sky:'night', rough:0.7, roughAmp:30, weather:'stars', wxName:'звёзды'}
+  {name:'Луга',    dot:'#4caf50', bgTop:'#7ec8ff', bgBot:'#dff6ff', ground:0x6b4a2b, grass:0x4caf50, gravity:1.15, ascend:0.34, amp:290, friction:1.00, sky:'day'},
+  {name:'Пустыня', dot:'#e0a458', bgTop:'#ffb36b', bgBot:'#ffe6b3', ground:0xc2853f, grass:0xe0a458, gravity:1.12, ascend:0.31, amp:250, friction:0.82, sky:'day'},
+  {name:'Снега',   dot:'#cfe8ff', bgTop:'#bcd4e6', bgBot:'#f5fbff', ground:0x8fa6b5, grass:0xffffff, gravity:1.15, ascend:0.29, amp:230, friction:0.58, sky:'day'},
+  {name:'Каньон',  dot:'#c0392b', bgTop:'#7b2d3a', bgBot:'#e0794b', ground:0x8c3b2b, grass:0xcf5c3a, gravity:1.20, ascend:0.40, amp:360, friction:1.00, sky:'dusk'},
+  {name:'Космос',  dot:'#8e7dff', bgTop:'#0a0a2a', bgBot:'#241b4d', ground:0x3a2d5c, grass:0x8e7dff, gravity:0.70, ascend:0.42, amp:420, friction:0.90, sky:'night'}
 ];
 
 const SEL={car:0, biome:0};
 let CAR, BIOME;
 let terrain=[], chassis, wheelB, wheelF, group;
-let bodyGfx, wheelGfx, terrainGfx, dust, weatherEmitter, sceneRef;
-let onGround=false, lastGround=-9999, flipTimer=0, crashTilt=false;
-let running=false, dead=false, paused=false;
+let carGfx, terrainGfx, dust, sceneRef;
+let onGround=false, lastGround=-9999, flipTimer=0;
+let running=false, dead=false;
 let fuel=100, coins=0, startY=0, maxAlt=0;
 let gasBtn=false, brakeBtn=false, pickups=[];
 
 const BEST_KEY='vc_best';
 function getBest(){ return parseInt(localStorage.getItem(BEST_KEY)||'0',10)||0; }
 function setBest(v){ if(v>getBest()){ localStorage.setItem(BEST_KEY,String(v)); try{window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.CloudStorage&&window.Telegram.WebApp.CloudStorage.setItem(BEST_KEY,String(v));}catch(e){} } }
-function applyBiomeBg(b){ document.body.style.background='linear-gradient(180deg,'+b.bgTop+' 0%,'+b.bgBot+' 100%)'; }
 
-/* ---------- ГЕНЕРАЦИЯ ТРАССЫ ---------- */
+function applyBiomeBg(b){ document.body.style.background='linear-gradient(180deg,'+b.bgTop+','+b.bgBot+')'; }
+
+/* ---------- ГЕНЕРАЦИЯ ТРАССЫ С ЛИМИТЕРОМ ПРОХОДИМОСТИ ---------- */
 function generateTerrain(){
   terrain=[];
-  const p=BIOME;
   for(let i=0;i<COUNT;i++){
     const x=i*STEP;
     const growth=1+i/COUNT;
-    let y=-(x*p.ascend);
-    y+=Math.sin(i*0.065)*p.amp;
-    y+=Math.sin(i*0.24+0.7)*0.42*p.amp;
-    y+=Math.sin(i*0.5+1.3)*42;
-    y+=Math.sin(i*p.rough)*p.roughAmp;
-    terrain.push({x, y:y*growth});
+    const hills=(Math.sin(i*0.24)*0.42*BIOME.amp + Math.sin(i*0.065)*BIOME.amp + Math.sin(i*0.5)*45)*growth;
+    terrain.push({x, y:-(x*BIOME.ascend) + hills});
   }
+  // эффективное сцепление = min(грип машины, трение грунта)  →  Matter берёт min для пары
   const eMu=Math.min(CAR.grip, BIOME.friction);
-  const maxUp=STEP*Math.min(0.55, eMu*0.9);
-  const maxDown=STEP*1.35;
+  const maxUp=STEP*Math.min(0.55, eMu*0.9);   // потолок крутизны подъёма (гарантия проезжаемости)
+  const maxDown=STEP*1.3;                       // ограничение обрывов
   for(let i=1;i<terrain.length;i++){
     const prev=terrain[i-1].y; let y=terrain[i].y;
-    const rise=prev-y;
+    const rise=prev-y;                 // >0 = вверх (y уменьшается)
     if(rise>maxUp) y=prev-maxUp;
     else if(rise<-maxDown) y=prev+maxDown;
     terrain[i].y=y;
@@ -208,76 +182,84 @@ const game=new Phaser.Game(config);
 function create(){
   sceneRef=this;
   CAR=CARS[SEL.car]; BIOME=BIOMES[SEL.biome];
-  onGround=false; lastGround=-9999; flipTimer=0; crashTilt=false;
-  dead=false; running=false; paused=false;
+  onGround=false; lastGround=-9999; flipTimer=0; dead=false; running=false;
   fuel=100; coins=0; maxAlt=0; pickups=[]; gasBtn=false; brakeBtn=false;
   this.matter.world.setGravity(0, BIOME.gravity);
-  this.matter.world.off('collisionactive');
+  this.matter.world.off('collisionactive');   // чистка при рестарте
 
-  const W=this.scale.width;
+  // ---------- ТЕКСТУРЫ ----------
   let g=this.add.graphics();
   g.fillStyle(0xffffff,1); g.fillCircle(9,9,9); g.generateTexture('dust',18,18); g.clear();
-  g.fillStyle(0xffffff,0.95); g.fillEllipse(70,26,140,52); g.fillEllipse(40,32,80,40); g.fillEllipse(105,34,80,40); g.generateTexture('cloud',150,64); g.clear();
-  g.fillStyle(0xffffff,1); g.fillCircle(3,3,3); g.generateTexture('flake',6,6); g.clear();
-  g.fillStyle(0xffffff,1); g.fillRect(0,0,2,11); g.generateTexture('drop',2,11); g.destroy();
+  // мягкое облако (слои альфы)
+  g.fillStyle(0xffffff,0.28); g.fillEllipse(97,48,184,72);
+  g.fillStyle(0xffffff,0.95); g.fillEllipse(74,48,122,46); g.fillEllipse(48,54,74,34); g.fillEllipse(118,54,80,36);
+  g.generateTexture('cloud',196,88); g.clear();
+  // звезда с гало
+  g.fillStyle(0xffffff,0.22); g.fillCircle(6,6,6); g.fillStyle(0xffffff,1); g.fillCircle(6,6,2.2);
+  g.generateTexture('star',12,12); g.clear();
+  // светило (солнце/луна) под тинт
+  g.fillStyle(0xffffff,0.22); g.fillCircle(70,70,70); g.fillStyle(0xffffff,0.5); g.fillCircle(70,70,48); g.fillStyle(0xffffff,1); g.fillCircle(70,70,34);
+  g.generateTexture('orb',140,140); g.clear();
+  // силуэт горы под тинт
+  g.fillStyle(0xffffff,1); g.beginPath(); g.moveTo(0,300); g.lineTo(150,50); g.lineTo(235,150); g.lineTo(325,20); g.lineTo(520,300); g.closePath(); g.fillPath();
+  g.generateTexture('mtn',520,300); g.destroy();
 
   generateTerrain();
   startY=terrain[4].y;
 
-  // небо: солнце/луна + параллакс-горы
   const night=BIOME.sky==='night';
-  const sun=this.add.circle(W*0.22, 120, night?34:46, night?0xf6f2d0:0xfff2a8, night?0.9:0.95);
-  sun.setScrollFactor(0.05).setDepth(-12);
-  for(let layer=0;layer<2;layer++){
-    const mg=this.add.graphics().setScrollFactor(0.2+layer*0.18).setDepth(-11+layer);
-    const tint=layer===0?0x3a4a6b:0x4c5f86;
-    mg.fillStyle(tint, night?0.5:0.4);
-    mg.beginPath(); mg.moveTo(-200, startY+400);
-    for(let x=-200;x<COUNT*STEP;x+=260){ mg.lineTo(x, startY-Phaser.Math.Between(120,360)-layer*80); mg.lineTo(x+130, startY+400); }
-    mg.lineTo(COUNT*STEP, startY+400); mg.closePath(); mg.fillPath();
+  const worldW=COUNT*STEP;
+  const mtnTint=Phaser.Display.Color.HexStringToColor(BIOME.bgBot).color;
+
+  // светило
+  this.add.image(360, startY-640, 'orb').setScrollFactor(0.05).setDepth(-12)
+    .setTint(night?0xbfd0ff:0xfff2c0).setScale(night?0.7:1.3).setAlpha(night?0.85:0.95);
+
+  // дальние горы (2 гряды с параллаксом)
+  for(let i=0;i<Math.ceil(worldW/480)+2;i++){
+    this.add.image(i*480, startY - i*480*BIOME.ascend + 130, 'mtn')
+      .setOrigin(0.5,1).setScrollFactor(0.22).setDepth(-11)
+      .setTint(mtnTint).setAlpha(0.42).setScale(1.15,0.95);
   }
-  const bgTex = night?'flake':'cloud';
-  for(let i=0;i<60;i++){
-    const s=this.add.image(Phaser.Math.Between(0,COUNT*STEP), Phaser.Math.Between(startY-COUNT*STEP*0.6, startY+400), bgTex);
-    s.setScrollFactor(night?0.15:0.4).setDepth(-10).setAlpha(night?Phaser.Math.FloatBetween(0.4,1):Phaser.Math.FloatBetween(0.22,0.55)).setScale(night?Phaser.Math.FloatBetween(0.5,1.6):Phaser.Math.FloatBetween(0.6,1.5));
+  for(let i=0;i<Math.ceil(worldW/420)+2;i++){
+    this.add.image(i*420+140, startY - i*420*BIOME.ascend + 200, 'mtn')
+      .setOrigin(0.5,1).setScrollFactor(0.42).setDepth(-10)
+      .setTint(mtnTint).setAlpha(0.62).setScale(0.85,0.7);
   }
 
-  // рельеф
+  // облака / звёзды
+  for(let i=0;i<(night?110:44);i++){
+    const tex=night?'star':'cloud';
+    const s=this.add.image(Phaser.Math.Between(0,worldW), Phaser.Math.Between(startY-worldW*0.6, startY+400), tex);
+    s.setScrollFactor(night?0.15:0.35).setDepth(-9)
+     .setAlpha(night?Phaser.Math.FloatBetween(0.4,1):Phaser.Math.FloatBetween(0.5,0.85))
+     .setScale(night?Phaser.Math.FloatBetween(0.5,1.6):Phaser.Math.FloatBetween(0.6,1.5));
+  }
+
+  // рельеф + декор биома
   terrainGfx=this.add.graphics().setDepth(1); drawTerrain();
+  drawProps();
   for(let i=0;i<terrain.length-1;i++){
     const a=terrain[i], b=terrain[i+1], dx=b.x-a.x, dy=b.y-a.y;
     this.matter.add.rectangle(a.x+dx/2, a.y+dy/2+20, Math.hypot(dx,dy)+2, 44, {isStatic:true, angle:Math.atan2(dy,dx), friction:BIOME.friction, frictionStatic:1, label:'terrain'});
   }
 
+  // пикапы
   for(let i=8;i<terrain.length-4;i+=11) pickups.push({x:terrain[i].x, y:terrain[i].y-70, type:(i%22===8?'fuel':'coin'), got:false});
 
   // машина
   group=Matter.Body.nextGroup(true);
   const cx=terrain[4].x, cy=terrain[4].y-180, R=CAR.wheel;
-  chassis=this.matter.add.rectangle(cx,cy,CAR.bw,CAR.bh+8,{collisionFilter:{group},chamfer:{radius:12},density:CAR.density,friction:0.1,label:'chassis'});
+  chassis=this.matter.add.rectangle(cx,cy,124,42,{collisionFilter:{group},chamfer:{radius:14},density:CAR.density,friction:0.1,label:'chassis'});
   wheelB=this.matter.add.circle(cx-46,cy+30,R,{collisionFilter:{group},density:0.0026,friction:CAR.grip,frictionStatic:1,label:'wheel'});
   wheelF=this.matter.add.circle(cx+46,cy+30,R,{collisionFilter:{group},density:0.0026,friction:CAR.grip,frictionStatic:1,label:'wheel'});
-  this.matter.add.constraint(chassis, wheelB, 0, CAR.susp, {pointA:{x:-46,y:22}, damping:CAR.damp});
-  this.matter.add.constraint(chassis, wheelF, 0, CAR.susp, {pointA:{x:46,y:22}, damping:CAR.damp});
+  this.matter.add.constraint(chassis, wheelB, 0, CAR.susp, {pointA:{x:-46,y:30}, damping:CAR.damp});
+  this.matter.add.constraint(chassis, wheelF, 0, CAR.susp, {pointA:{x:46,y:30}, damping:CAR.damp});
 
   dust=this.add.particles(0,0,'dust',{lifespan:500,speed:{min:20,max:90},scale:{start:0.7,end:0},alpha:{start:0.6,end:0},tint:BIOME.ground,quantity:2,frequency:30,emitting:false}).setDepth(4);
+  carGfx=this.add.graphics().setDepth(5);
 
-  // погода
-  weatherEmitter=null;
-  if(BIOME.weather==='snow'){
-    weatherEmitter=this.add.particles(0,0,'flake',{lifespan:5200,speedY:{min:40,max:90},speedX:{min:-25,max:15},scale:{min:0.3,max:0.9},alpha:{min:0.4,max:0.9},frequency:45,quantity:2,emitZone:{type:'random',source:new Phaser.Geom.Rectangle(-60,-20,W+120,10)}}).setScrollFactor(0).setDepth(60);
-  } else if(BIOME.weather==='rain'){
-    weatherEmitter=this.add.particles(0,0,'drop',{lifespan:1200,speedY:{min:520,max:700},speedX:{min:-60,max:-30},scaleY:{min:1,max:2},alpha:0.35,tint:0xbcd4ff,frequency:12,quantity:3,emitZone:{type:'random',source:new Phaser.Geom.Rectangle(-60,-20,W+220,10)}}).setScrollFactor(0).setDepth(60);
-  } else if(BIOME.weather==='sand'){
-    weatherEmitter=this.add.particles(0,0,'dust',{lifespan:2600,speedX:{min:120,max:220},speedY:{min:-10,max:30},scale:{min:0.4,max:1.1},alpha:{min:0.05,max:0.2},tint:0xe0c07a,frequency:40,quantity:2,emitZone:{type:'random',source:new Phaser.Geom.Rectangle(-80,0,10,this.scale.height)}}).setScrollFactor(0).setDepth(59);
-  }
-
-  wheelGfx=this.add.graphics().setDepth(5);
-  bodyGfx=this.add.graphics().setDepth(6);
-
-  this.matter.world.on('collisionactive',(e)=>{ for(const p of e.pairs){ const l1=p.bodyA.label,l2=p.bodyB.label;
-    if((l1==='wheel'&&l2==='terrain')||(l2==='wheel'&&l1==='terrain')) lastGround=this.time.now;
-    if((l1==='chassis'&&l2==='terrain')||(l2==='chassis'&&l1==='terrain')){ if(Math.abs(Phaser.Math.Angle.Wrap(chassis.angle))>1.35) crashTilt=true; } } });
+  this.matter.world.on('collisionactive',(e)=>{ for(const p of e.pairs){ const l1=p.bodyA.label,l2=p.bodyB.label; if((l1==='wheel'&&l2==='terrain')||(l2==='wheel'&&l1==='terrain')) lastGround=this.time.now; } });
 
   this.cameras.main.setZoom(0.82); this.cameras.main.centerOn(cx,cy);
 
@@ -290,15 +272,87 @@ function create(){
   startCountdown();
 }
 
+function shade(hex,amt){ const c=Phaser.Display.Color.IntegerToColor(hex); const f=v=>Phaser.Math.Clamp(Math.round(v+amt),0,255); return Phaser.Display.Color.GetColor(f(c.red),f(c.green),f(c.blue)); }
+
 function drawTerrain(){
   const g=terrainGfx; g.clear();
+  const last=terrain[terrain.length-1];
+  const soil=shade(BIOME.ground,28), dark=shade(BIOME.ground,-46), grassHi=shade(BIOME.grass,55);
+  // тело земли
   g.fillStyle(BIOME.ground,1); g.beginPath(); g.moveTo(terrain[0].x,terrain[0].y);
   for(const p of terrain) g.lineTo(p.x,p.y);
-  const last=terrain[terrain.length-1];
-  g.lineTo(last.x,last.y+5000); g.lineTo(terrain[0].x,terrain[0].y+5000); g.closePath(); g.fillPath();
-  g.lineStyle(14,BIOME.grass,1); g.beginPath(); g.moveTo(terrain[0].x,terrain[0].y);
+  g.lineTo(last.x,last.y+6000); g.lineTo(terrain[0].x,terrain[0].y+6000); g.closePath(); g.fillPath();
+  // тёмная глубина
+  g.fillStyle(dark,1); g.beginPath(); g.moveTo(terrain[0].x,terrain[0].y+150);
+  for(const p of terrain) g.lineTo(p.x,p.y+150);
+  g.lineTo(last.x,last.y+6000); g.lineTo(terrain[0].x,terrain[0].y+6000); g.closePath(); g.fillPath();
+  // почвенный слой под травой
+  g.fillStyle(soil,1); g.beginPath(); g.moveTo(terrain[0].x,terrain[0].y);
+  for(const p of terrain) g.lineTo(p.x,p.y);
+  for(let i=terrain.length-1;i>=0;i--) g.lineTo(terrain[i].x,terrain[i].y+30);
+  g.closePath(); g.fillPath();
+  // трава
+  g.lineStyle(11,BIOME.grass,1); g.beginPath(); g.moveTo(terrain[0].x,terrain[0].y);
   for(const p of terrain) g.lineTo(p.x,p.y);
   g.strokePath();
+  g.lineStyle(4,grassHi,1); g.beginPath(); g.moveTo(terrain[0].x,terrain[0].y-3);
+  for(const p of terrain) g.lineTo(p.x,p.y-3);
+  g.strokePath();
+}
+
+function pseudo(i){ const r=(Math.sin(i*12.9898)*43758.5453)%1; return r<0?r+1:r; }
+function drawProps(){
+  const g=sceneRef.add.graphics().setDepth(2);
+  for(let i=6;i<terrain.length-2;i+=2){
+    if(pseudo(i)>0.40) continue;
+    const p=terrain[i], x=p.x, y=p.y-2, r=pseudo(i*3.1);
+    switch(BIOME.name){
+      case 'Луга': drawTree(g,x,y,r); break;
+      case 'Пустыня': drawCactus(g,x,y,r); break;
+      case 'Снега': drawPine(g,x,y,r); break;
+      case 'Каньон': drawRock(g,x,y,r); break;
+      default: drawCrystal(g,x,y,r);
+    }
+  }
+}
+function drawTree(g,x,y,r){
+  const h=44+r*30, tw=7+r*3;
+  g.fillStyle(0x000000,0.10); g.fillEllipse(x+6,y+3,50+r*20,12);
+  g.fillStyle(0x5b3a1e,1); g.fillRoundedRect(x-tw/2,y-h*0.42,tw,h*0.42,3);
+  g.fillStyle(0x2f7d34,1); g.fillCircle(x,y-h*0.6,22+r*8); g.fillCircle(x-16,y-h*0.46,15+r*5); g.fillCircle(x+16,y-h*0.46,15+r*5);
+  g.fillStyle(0x57bd5e,1); g.fillCircle(x-6,y-h*0.72,13+r*5);
+}
+function drawPine(g,x,y,r){
+  const h=56+r*26;
+  g.fillStyle(0x000000,0.10); g.fillEllipse(x+5,y+3,40,10);
+  g.fillStyle(0x5b3a1e,1); g.fillRect(x-4,y-16,8,16);
+  g.fillStyle(0x2e6b3a,1);
+  for(let k=0;k<3;k++){ const ly=y-14-k*(h*0.26), w=28-k*5; g.fillTriangle(x-w,ly,x+w,ly,x,ly-h*0.40); }
+  g.fillStyle(0xffffff,0.92);
+  for(let k=0;k<3;k++){ const ly=y-14-k*(h*0.26); g.fillTriangle(x-9,ly-h*0.28,x+9,ly-h*0.28,x,ly-h*0.40); }
+}
+function drawCactus(g,x,y,r){
+  const h=44+r*26;
+  g.fillStyle(0x000000,0.10); g.fillEllipse(x+4,y+3,34,9);
+  g.fillStyle(0x3f8f4f,1);
+  g.fillRoundedRect(x-7,y-h,14,h,7);
+  g.fillRoundedRect(x-22,y-h*0.55,16,12,6);
+  g.fillRoundedRect(x-22,y-h*0.72,12,h*0.22,6);
+  g.fillRoundedRect(x+6,y-h*0.68,16,12,6);
+  g.fillRoundedRect(x+10,y-h*0.85,12,h*0.25,6);
+  g.fillStyle(0x58ad66,1); g.fillRoundedRect(x-4,y-h+4,3,h-8,2);
+}
+function drawRock(g,x,y,r){
+  const h=34+r*46;
+  g.fillStyle(0x000000,0.12); g.fillEllipse(x+6,y+3,60,12);
+  g.fillStyle(0x8c3b2b,1); g.beginPath(); g.moveTo(x-26,y); g.lineTo(x-10,y-h); g.lineTo(x+8,y-h*0.66); g.lineTo(x+24,y); g.closePath(); g.fillPath();
+  g.fillStyle(0xb05a3c,1); g.beginPath(); g.moveTo(x-10,y-h); g.lineTo(x+8,y-h*0.66); g.lineTo(x+2,y); g.lineTo(x-4,y); g.closePath(); g.fillPath();
+}
+function drawCrystal(g,x,y,r){
+  const h=32+r*40;
+  g.fillStyle(0x8e7dff,0.30); g.fillCircle(x,y-h*0.4,26+r*12);
+  g.fillStyle(0x8e7dff,1); g.beginPath(); g.moveTo(x,y-h); g.lineTo(x-12,y-h*0.28); g.lineTo(x-6,y); g.lineTo(x+6,y); g.lineTo(x+12,y-h*0.28); g.closePath(); g.fillPath();
+  g.fillStyle(0xcabfff,1); g.beginPath(); g.moveTo(x,y-h); g.lineTo(x-12,y-h*0.28); g.lineTo(x-1,y-h*0.28); g.lineTo(x-1,y); g.closePath(); g.fillPath();
 }
 
 function nearestIndex(x){ return Phaser.Math.Clamp(Math.round(x/STEP),0,terrain.length-4); }
@@ -325,9 +379,8 @@ function update(time,delta){
     fuel-=0.5*dt;
     if(fuel<=0){ fuel=0; return die('Кончилось топливо','Заправляйся на зелёных канистрах.'); }
 
-    if(crashTilt) return die('Разбился','Кабина ударилась о землю — приземляйся на колёса.');
-    const wa=Math.abs(Phaser.Math.Angle.Wrap(chassis.angle));
-    if(wa>2.2){ flipTimer+=delta; if(flipTimer>1300) return die('Перевернулся','На крыше не поедешь. Выравнивайся в воздухе газом и тормозом.'); } else flipTimer=0;
+    const ang=Math.abs(Phaser.Math.Angle.Wrap(chassis.angle));
+    if(ang>2.5 && onGround){ flipTimer+=delta; if(flipTimer>650) return die('Перевернулся','Выравнивай машину в воздухе газом и тормозом.'); } else flipTimer=0;
 
     for(const pk of pickups){ if(pk.got) continue;
       if(Phaser.Math.Distance.Between(chassis.position.x,chassis.position.y,pk.x,pk.y)<58){ pk.got=true; if(pk.type==='fuel') fuel=Math.min(100,fuel+40); else coins++; } }
@@ -353,57 +406,49 @@ function update(time,delta){
   renderCar();
 }
 
-/* ---------- ОТРИСОВКА МАШИНЫ ---------- */
-function toWorld(ang,lx,ly){ const c=Math.cos(ang),s=Math.sin(ang); return {x:chassis.position.x+lx*c-ly*s, y:chassis.position.y+lx*s+ly*c}; }
-
-function renderCar(){
-  if(!chassis||!wheelGfx) return;
-  const wg=wheelGfx; wg.clear();
-  for(const pk of pickups){ if(pk.got) continue;
-    if(pk.type==='coin'){ wg.fillStyle(0xffd54a,1); wg.fillCircle(pk.x,pk.y,13); wg.lineStyle(3,0xd4a017,1); wg.strokeCircle(pk.x,pk.y,13); }
-    else { wg.fillStyle(0x2ecc71,1); wg.fillRoundedRect(pk.x-11,pk.y-15,22,30,5); wg.lineStyle(3,0x145a32,1); wg.strokeRoundedRect(pk.x-11,pk.y-15,22,30,5); } }
+function poly(g,pts,stroke){ g.beginPath(); g.moveTo(pts[0].x,pts[0].y); for(let i=1;i<pts.length;i++) g.lineTo(pts[i].x,pts[i].y); g.closePath(); g.fillPath(); if(stroke) g.strokePath(); }
+function drawWheel(g,w){
   const R=CAR.wheel;
-  // тень
-  wg.fillStyle(0x000000,0.16); wg.fillEllipse(chassis.position.x, Math.max(wheelB.position.y,wheelF.position.y)+R*0.7, CAR.bw+50, 24);
-  // подвеска (стойки)
-  const mounts=[{lx:-46,ly:6,w:wheelB},{lx:46,ly:6,w:wheelF}];
-  for(const m of mounts){ const mp=toWorld(chassis.angle,m.lx,m.ly), wp=m.w.position;
-    wg.lineStyle(8,0x30354a,1); wg.beginPath(); wg.moveTo(mp.x,mp.y); wg.lineTo(wp.x,wp.y); wg.strokePath();
-    wg.lineStyle(3,0x9aa0b5,1); wg.beginPath(); wg.moveTo(mp.x,mp.y); wg.lineTo(wp.x,wp.y); wg.strokePath(); }
-  // колёса
-  for(const w of [wheelB,wheelF]){
-    wg.fillStyle(0x14141f,1); wg.fillCircle(w.position.x,w.position.y,R);
-    wg.fillStyle(0x2b2f42,1); wg.fillCircle(w.position.x,w.position.y,R*0.62);
-    wg.fillStyle(0xc9cee0,1); wg.fillCircle(w.position.x,w.position.y,R*0.22);
-    wg.lineStyle(Math.max(3,R*0.10),0x6b7189,1);
-    for(let k=0;k<6;k++){ const a=w.angle+k*Math.PI/3; wg.beginPath(); wg.moveTo(w.position.x,w.position.y); wg.lineTo(w.position.x+Math.cos(a)*R*0.55, w.position.y+Math.sin(a)*R*0.55); wg.strokePath(); }
-  }
-  // корпус (локальные координаты + поворот)
-  bodyGfx.clear(); bodyGfx.setPosition(chassis.position.x,chassis.position.y); bodyGfx.setRotation(chassis.angle);
-  drawBody(bodyGfx);
+  g.fillStyle(0x15151f,1); g.fillCircle(w.position.x,w.position.y,R);
+  g.fillStyle(0x2a2a3a,1); g.fillCircle(w.position.x,w.position.y,R*0.72);
+  g.fillStyle(0xb9c0d6,1); g.fillCircle(w.position.x,w.position.y,R*0.34);
+  g.fillStyle(0x6a7290,1); g.fillCircle(w.position.x,w.position.y,R*0.14);
+  g.lineStyle(4,0x565e78,1);
+  for(let k=0;k<6;k++){ const a=w.angle+k*Math.PI/3; g.beginPath(); g.moveTo(w.position.x,w.position.y); g.lineTo(w.position.x+Math.cos(a)*R*0.66,w.position.y+Math.sin(a)*R*0.66); g.strokePath(); }
 }
+function renderCar(){
+  if(!carGfx||!chassis) return;
+  const g=carGfx; g.clear();
+  // пикапы
+  for(const pk of pickups){ if(pk.got) continue;
+    if(pk.type==='coin'){ g.fillStyle(0x000000,0.12); g.fillEllipse(pk.x+3,pk.y+14,20,6); g.fillStyle(0xffd54a,1); g.fillCircle(pk.x,pk.y,13); g.lineStyle(3,0xd4a017,1); g.strokeCircle(pk.x,pk.y,13); g.fillStyle(0xfff1b8,1); g.fillCircle(pk.x-3,pk.y-3,4); }
+    else { g.fillStyle(0x000000,0.12); g.fillEllipse(pk.x+3,pk.y+18,22,6); g.fillStyle(0x2ecc71,1); g.fillRoundedRect(pk.x-12,pk.y-16,24,32,5); g.lineStyle(3,0x145a32,1); g.strokeRoundedRect(pk.x-12,pk.y-16,24,32,5); g.fillStyle(0xeafff2,1); g.fillRect(pk.x-7,pk.y-11,14,5); } }
 
-function drawBody(g){
-  const c=CAR.color, dark=0x141420, bw=CAR.bw, bh=CAR.bh;
-  const cw=CAR.cab.w, ch=CAR.cab.h, cx=CAR.cab.x;
-  // арки колёс
-  g.fillStyle(0x101018,1); g.fillCircle(-46,20,CAR.wheel+6); g.fillCircle(46,20,CAR.wheel+6);
-  // нижний корпус
-  g.fillStyle(c,1); g.lineStyle(3,dark,1);
-  g.fillRoundedRect(-bw/2,-6,bw,bh,8); g.strokeRoundedRect(-bw/2,-6,bw,bh,8);
-  // капот-скос спереди
-  g.fillStyle(c,1); g.beginPath(); g.moveTo(bw/2-4,-6); g.lineTo(bw/2+14,2); g.lineTo(bw/2+14,bh-6); g.lineTo(bw/2-4,bh-6); g.closePath(); g.fillPath();
-  // кабина
-  g.fillStyle(CAR.roof,1); g.lineStyle(3,dark,1);
-  g.beginPath(); g.moveTo(cx-cw/2,-6); g.lineTo(cx-cw/2+8,-6-ch); g.lineTo(cx+cw/2-14,-6-ch); g.lineTo(cx+cw/2,-6); g.closePath(); g.fillPath(); g.strokePath();
-  // лобовое стекло
-  g.fillStyle(CAR.glass,0.92); g.beginPath(); g.moveTo(cx+cw/2-16,-8); g.lineTo(cx+cw/2-6,-8); g.lineTo(cx+2,-6-ch+4); g.lineTo(cx-2,-6-ch+4); g.closePath(); g.fillPath();
-  // водитель: голова + шлем
-  g.fillStyle(0xf1c27d,1); g.fillCircle(cx-4,-6-ch+10,6);
-  g.fillStyle(0xd63031,1); g.slice(cx-4,-6-ch+10,8,Math.PI,Math.PI*2,false); g.fillPath();
-  // фара и задний габарит
-  g.fillStyle(0xfff3b0,1); g.fillCircle(bw/2+8,8,4);
-  g.fillStyle(0xff5252,1); g.fillCircle(-bw/2-1,8,3);
+  const cx=chassis.position.x, cy=chassis.position.y, a=chassis.angle;
+  const cos=Math.cos(a), sin=Math.sin(a);
+  const P=(lx,ly)=>({x:cx+lx*cos-ly*sin, y:cy+lx*sin+ly*cos});
+  const dark=shade(CAR.color,-42), light=shade(CAR.color,52);
+
+  // тень
+  const gy=Math.max(wheelB.position.y,wheelF.position.y)+CAR.wheel*0.75;
+  g.fillStyle(0x000000,0.20); g.fillEllipse(cx,gy,160,26);
+
+  // корпус
+  const body=[P(-64,8),P(-62,-8),P(-40,-14),P(-14,-16),P(-4,-34),P(28,-36),P(40,-16),P(58,-12),P(66,-2),P(66,18),P(-64,18)];
+  g.fillStyle(CAR.color,1); g.lineStyle(3,0x141420,1); poly(g,body,true);
+  // тёмная нижняя полоса
+  g.fillStyle(dark,1); poly(g,[P(-64,9),P(66,9),P(66,18),P(-64,18)],false);
+  // блик на капоте/крыше
+  g.fillStyle(light,0.55); poly(g,[P(-2,-32),P(26,-34),P(30,-25),P(-4,-23)],false);
+  // кабина/окна
+  g.fillStyle(0x1b2740,1); poly(g,[P(-6,-33),P(26,-35),P(37,-17),P(-12,-15)],false);
+  g.fillStyle(0x9fd0ff,0.95); poly(g,[P(-4,-31),P(8,-32),P(8,-17),P(-9,-16)],false);
+  g.fillStyle(0x9fd0ff,0.95); poly(g,[P(11,-32),P(24,-33),P(33,-17),P(11,-17)],false);
+  // фары
+  const fl=P(65,-2); g.fillStyle(0xfff3b0,1); g.fillCircle(fl.x,fl.y,4.5);
+  const rl=P(-63,-3); g.fillStyle(0xff5a5a,1); g.fillCircle(rl.x,rl.y,3.8);
+  // колёса поверх
+  drawWheel(g,wheelB); drawWheel(g,wheelF);
 }
 
 function startCountdown(){
@@ -420,45 +465,27 @@ function die(title,text){
   document.getElementById('over').classList.remove('hidden');
 }
 
-/* ---------- ПРЕВЬЮ МАШИНЫ В МЕНЮ (canvas 2D) ---------- */
-function drawCarPreview(){
-  const cv=document.getElementById('carCanvas'), ctx=cv.getContext('2d'); const c=CARS[SEL.car];
-  ctx.clearRect(0,0,150,84);
-  const hex=n=>'#'+n.toString(16).padStart(6,'0');
-  const bw=c.bw*0.62, bh=c.bh*0.62, cw=c.cab.w*0.62, ch=c.cab.h*0.62, cx=75+c.cab.x*0.62, R=c.wheel*0.62, by=48;
-  ctx.fillStyle='rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(75,by+R+6,bw*0.7,6,0,0,7); ctx.fill();
-  // колёса
-  for(const wx of [75-28,75+28]){ ctx.fillStyle='#14141f'; ctx.beginPath(); ctx.arc(wx,by+R,R,0,7); ctx.fill(); ctx.fillStyle='#c9cee0'; ctx.beginPath(); ctx.arc(wx,by+R,R*0.3,0,7); ctx.fill(); }
-  ctx.fillStyle=hex(c.color); ctx.strokeStyle='#141420'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.roundRect(75-bw/2,by-6,bw,bh,6); ctx.fill(); ctx.stroke();
-  ctx.fillStyle=hex(c.roof); ctx.beginPath(); ctx.moveTo(cx-cw/2,by-6); ctx.lineTo(cx-cw/2+6,by-6-ch); ctx.lineTo(cx+cw/2-10,by-6-ch); ctx.lineTo(cx+cw/2,by-6); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle=hex(c.glass); ctx.beginPath(); ctx.moveTo(cx+cw/2-10,by-8); ctx.lineTo(cx+cw/2-4,by-8); ctx.lineTo(cx+1,by-6-ch+3); ctx.lineTo(cx-1,by-6-ch+3); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#f1c27d'; ctx.beginPath(); ctx.arc(cx-3,by-6-ch+7,4,0,7); ctx.fill();
-  ctx.fillStyle='#d63031'; ctx.beginPath(); ctx.arc(cx-3,by-6-ch+7,5,Math.PI,0); ctx.fill();
-}
-
 /* ---------- МЕНЮ ---------- */
 function renderStats(){
   const c=CARS[SEL.car];
+  document.getElementById('carEmoji').textContent=c.emoji;
   document.getElementById('carName').textContent=c.name;
   const box=document.getElementById('stats'); box.innerHTML='';
   for(const k in c.stats){ const v=c.stats[k];
     const row=document.createElement('div'); row.className='stat';
     row.innerHTML='<span class="lbl">'+k+'</span><span class="bar"><i style="width:'+(v*20)+'%"></i></span>';
     box.appendChild(row); }
-  drawCarPreview();
 }
 function renderBiomes(){
   const box=document.getElementById('biomes'); box.innerHTML='';
   BIOMES.forEach((b,i)=>{ const chip=document.createElement('div'); chip.className='chip'+(i===SEL.biome?' sel':'');
-    chip.innerHTML='<span class="dot" style="background:'+b.dot+'"></span>'+b.name+'<span class="wx">'+b.wxName+'</span>';
+    chip.innerHTML='<span class="dot" style="background:'+b.dot+'"></span>'+b.name;
     chip.onclick=()=>{ SEL.biome=i; renderBiomes(); applyBiomeBg(BIOMES[i]); };
     box.appendChild(chip); });
 }
 function openMenu(){
   document.body.classList.remove('playing');
   document.getElementById('over').classList.add('hidden');
-  document.getElementById('pause').classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
   document.getElementById('best').textContent='Рекорд: '+getBest()+' м';
   renderStats(); renderBiomes(); applyBiomeBg(BIOMES[SEL.biome]);
@@ -474,13 +501,6 @@ document.getElementById('nextCar').onclick=()=>{ SEL.car=(SEL.car+1)%CARS.length
 document.getElementById('playBtn').onclick=startGame;
 document.getElementById('retryBtn').onclick=()=>{ document.getElementById('over').classList.add('hidden'); document.body.classList.add('playing'); game.scene.start('Game'); };
 document.getElementById('menuBtn').onclick=()=>{ game.scene.stop('Game'); openMenu(); };
-
-/* пауза */
-function pauseGame(){ if(dead||paused||!document.body.classList.contains('playing')) return; paused=true; game.scene.pause('Game'); document.getElementById('pause').classList.remove('hidden'); }
-function resumeGame(){ if(!paused) return; paused=false; document.getElementById('pause').classList.add('hidden'); game.scene.resume('Game'); }
-document.getElementById('pauseBtn').onclick=pauseGame;
-document.getElementById('resumeBtn').onclick=resumeGame;
-document.getElementById('pMenuBtn').onclick=()=>{ paused=false; game.scene.stop('Game'); openMenu(); };
 
 /* педали */
 function bindPedal(id,setter){ const el=document.getElementById(id);
